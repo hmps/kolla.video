@@ -13,6 +13,16 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useTRPC } from "@/trpc/client";
 
 export default function PlayersPage({
@@ -70,21 +80,40 @@ export default function PlayersPage({
   const isCoach = team?.role === "coach";
 
   return (
-    <div className="container mx-auto p-8 max-w-4xl">
-      <div className="mb-6">
-        <Link
-          href={`/teams/${teamId}/events`}
-          className="text-sm text-muted-foreground mb-2 block"
-        >
-          ← Back to Events
-        </Link>
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Team Roster</h1>
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href={`/teams/${teamId}/events`}>
+                  {team?.name || "Team"}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Roster</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        <div className="ml-auto flex items-center gap-2 px-4">
           {isCoach && !isAdding && (
             <Button onClick={() => setIsAdding(true)}>Add Player</Button>
           )}
         </div>
-      </div>
+      </header>
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="container mx-auto max-w-4xl">
 
       {isAdding && isCoach && (
         <Card className="mb-6">
@@ -179,6 +208,8 @@ export default function PlayersPage({
           )}
         </CardContent>
       </Card>
-    </div>
+        </div>
+      </div>
+    </>
   );
 }

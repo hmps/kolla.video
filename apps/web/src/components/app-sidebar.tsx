@@ -1,0 +1,80 @@
+"use client"
+
+import * as React from "react"
+import {
+  Home,
+  Video,
+  Users,
+  Calendar,
+  Settings2,
+  Plus,
+} from "lucide-react"
+import { useUser } from "@clerk/nextjs"
+
+import { NavMain } from "@/components/nav-main"
+import { NavProjects } from "@/components/nav-projects"
+import { NavUser } from "@/components/nav-user"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useUser()
+
+  const navMain = [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: Home,
+    },
+    {
+      title: "Teams",
+      url: "/teams/new",
+      icon: Plus,
+      items: [
+        {
+          title: "Create Team",
+          url: "/teams/new",
+        },
+      ],
+    },
+  ]
+
+  return (
+    <Sidebar variant="inset" {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <a href="/dashboard">
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <Video className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-medium">VUDL</span>
+                  <span className="truncate text-xs">Video Platform</span>
+                </div>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain items={navMain} />
+      </SidebarContent>
+      <SidebarFooter>
+        <NavUser user={{
+          name: user?.fullName || user?.firstName || "User",
+          email: user?.primaryEmailAddress?.emailAddress || "",
+          avatar: user?.imageUrl || "",
+        }} />
+      </SidebarFooter>
+    </Sidebar>
+  )
+}
