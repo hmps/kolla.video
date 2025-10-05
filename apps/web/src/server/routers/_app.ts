@@ -1,14 +1,20 @@
-import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { router } from "../trpc";
+import { authRouter } from "./auth";
+import { clipsRouter } from "./clips";
+import { commentsRouter } from "./comments";
+import { eventsRouter } from "./events";
+import { playersRouter } from "./players";
+import { sharesRouter } from "./shares";
+import { teamsRouter } from "./teams";
 
 export const appRouter = router({
-  hello: publicProcedure
-    .input(z.object({ name: z.string().optional() }))
-    .query(({ input }) => {
-      return {
-        greeting: `Hello ${input.name ?? "World"}!`,
-      };
-    }),
+  auth: authRouter,
+  teams: teamsRouter,
+  events: eventsRouter,
+  players: playersRouter,
+  clips: clipsRouter,
+  comments: commentsRouter,
+  shares: sharesRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -66,45 +66,25 @@ To add more components, manually create in `src/components/ui/` following shadcn
 
 ## tRPC Setup
 
-### Server (`src/server/`)
+**⚠️ Important**: This project uses **`@trpc/tanstack-react-query`** (the new recommended pattern), **NOT** the deprecated `@trpc/react-query`.
+
+**📚 See [src/trpc/AGENTS.md](./src/trpc/AGENTS.md) for complete setup guide, examples, and migration instructions.**
+
+### Quick Usage
 
 ```typescript
-// trpc.ts - Context and procedure builders
-export const createTRPCContext = async (opts: { headers: Headers }) => ({})
-export const publicProcedure = t.procedure
-export const router = t.router
+import { useTRPC } from "@/trpc/client"
+import { useQuery, useMutation } from "@tanstack/react-query"
 
-// routers/_app.ts - Root router
-export const appRouter = router({
-  hello: publicProcedure
-    .input(z.object({ name: z.string().optional() }))
-    .query(({ input }) => ({ greeting: `Hello ${input.name ?? "World"}!` }))
-})
-```
+function MyComponent() {
+  const trpc = useTRPC();
 
-### Client (`src/trpc/`)
+  // Queries
+  const userQuery = useQuery(trpc.auth.getMe.queryOptions());
 
-```typescript
-// react.tsx - React provider with TanStack Query
-export function TRPCReactProvider({ children }) {
-  const queryClient = new QueryClient()
-  const trpcClient = api.createClient(...)
-  return (
-    <QueryClientProvider client={queryClient}>
-      <api.Provider client={trpcClient} queryClient={queryClient}>
-        {children}
-      </api.Provider>
-    </QueryClientProvider>
-  )
+  // Mutations
+  const createTeam = useMutation(trpc.teams.create.mutationOptions());
 }
-```
-
-### Usage in Components
-
-```typescript
-import { api } from "@/trpc/react"
-
-const data = api.hello.useQuery({ name: "World" })
 ```
 
 ## Authentication (Clerk)

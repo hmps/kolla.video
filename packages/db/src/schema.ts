@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 
 // Users table
@@ -137,3 +137,105 @@ export const shareLinks = sqliteTable("share_links", {
     .notNull()
     .default(sql`(unixepoch())`),
 });
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  memberships: many(teamMemberships),
+  clips: many(clips),
+  comments: many(comments),
+}));
+
+export const teamsRelations = relations(teams, ({ many }) => ({
+  memberships: many(teamMemberships),
+  events: many(events),
+  players: many(players),
+}));
+
+export const teamMembershipsRelations = relations(
+  teamMemberships,
+  ({ one }) => ({
+    team: one(teams, {
+      fields: [teamMemberships.teamId],
+      references: [teams.id],
+    }),
+    user: one(users, {
+      fields: [teamMemberships.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const eventsRelations = relations(events, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [events.teamId],
+    references: [teams.id],
+  }),
+  clips: many(clips),
+  shareLinks: many(shareLinks),
+}));
+
+export const clipsRelations = relations(clips, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [clips.teamId],
+    references: [teams.id],
+  }),
+  event: one(events, {
+    fields: [clips.eventId],
+    references: [events.id],
+  }),
+  uploader: one(users, {
+    fields: [clips.uploaderId],
+    references: [users.id],
+  }),
+  tags: many(clipTags),
+  players: many(clipPlayers),
+  comments: many(comments),
+}));
+
+export const clipTagsRelations = relations(clipTags, ({ one }) => ({
+  clip: one(clips, {
+    fields: [clipTags.clipId],
+    references: [clips.id],
+  }),
+}));
+
+export const playersRelations = relations(players, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [players.teamId],
+    references: [teams.id],
+  }),
+  clips: many(clipPlayers),
+}));
+
+export const clipPlayersRelations = relations(clipPlayers, ({ one }) => ({
+  clip: one(clips, {
+    fields: [clipPlayers.clipId],
+    references: [clips.id],
+  }),
+  player: one(players, {
+    fields: [clipPlayers.playerId],
+    references: [players.id],
+  }),
+}));
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  clip: one(clips, {
+    fields: [comments.clipId],
+    references: [clips.id],
+  }),
+  author: one(users, {
+    fields: [comments.authorId],
+    references: [users.id],
+  }),
+}));
+
+export const shareLinksRelations = relations(shareLinks, ({ one }) => ({
+  team: one(teams, {
+    fields: [shareLinks.teamId],
+    references: [teams.id],
+  }),
+  event: one(events, {
+    fields: [shareLinks.eventId],
+    references: [events.id],
+  }),
+}));
