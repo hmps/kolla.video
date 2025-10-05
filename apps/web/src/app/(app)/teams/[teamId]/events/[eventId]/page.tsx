@@ -6,6 +6,14 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { PlyrPlayer } from "@/components/plyr-player";
 import { Badge } from "@/components/ui/badge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,6 +22,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
 import { useTRPC } from "@/trpc/client";
 
@@ -110,32 +120,43 @@ export default function EventDetailPage({
   };
 
   return (
-    <div className="container mx-auto p-8 max-w-7xl">
-      <div className="mb-6">
-        <Link
-          href={`/teams/${teamId}/events`}
-          className="text-sm text-muted-foreground mb-2 block"
-        >
-          ← Back to Events
-        </Link>
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold">{event?.title}</h1>
-            {event && (
-              <p className="text-muted-foreground">
-                {format(new Date(event.date), "PPP")} •{" "}
-                <span className="capitalize">{event.type}</span>
-              </p>
-            )}
-          </div>
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href={`/teams/${teamId}/events`}>
+                  Events
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{event?.title}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        <div className="ml-auto flex items-center gap-2 px-4">
+          {event && (
+            <p className="text-sm text-muted-foreground mr-4">
+              {format(new Date(event.date), "PPP")} •{" "}
+              <span className="capitalize">{event.type}</span>
+            </p>
+          )}
           <Link href={`/teams/${teamId}/events/${eventId}/upload`}>
             <Button>Upload Clips</Button>
           </Link>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
+      </header>
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-4">
           {selectedClip ? (
             <>
               <Card>
@@ -242,10 +263,10 @@ export default function EventDetailPage({
               </CardContent>
             </Card>
           )}
-        </div>
+          </div>
 
-        <div>
-          <Card>
+          <div>
+            <Card>
             <CardHeader>
               <CardTitle>Clips</CardTitle>
               <CardDescription>
@@ -296,8 +317,9 @@ export default function EventDetailPage({
               )}
             </CardContent>
           </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
