@@ -1,13 +1,14 @@
 "use client";
 
 import Hls from "hls.js";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface PlyrPlayerProps {
   src: string;
   poster?: string;
   onTimeUpdate?: (time: number) => void;
   onEnded?: () => void;
+  autoplay?: boolean;
 }
 
 /**
@@ -19,31 +20,37 @@ export function PlyrPlayer({
   poster,
   onTimeUpdate,
   onEnded,
+  autoplay = false,
 }: PlyrPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
+  // Initialize player once
   useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    let hls: Hls | null = null;
-    let cleanup: (() => void) | undefined;
+    let mounted = true;
 
     const initPlayer = async () => {
-      if (src.endsWith(".m3u8") && Hls.isSupported()) {
-        hls = new Hls();
-        hls.loadSource(src);
-        hls.attachMedia(el);
-        hlsRef.current = hls;
-      } else if (el.canPlayType("video/mp4")) {
-        el.src = src;
-      } else {
-        el.src = src;
-      }
+      // Create video element dynamically
+      const el = document.createElement("video");
+      el.playsInline = true;
+      videoRef.current = el;
+
+      // Add track element
+      const track = document.createElement("track");
+      track.kind = "captions";
+      el.appendChild(track);
+
+      container.appendChild(el);
 
       const Plyr = (await import("plyr")).default;
+      if (!mounted) return;
+
       const player = new Plyr(el, {
         controls: [
           "play",
@@ -73,22 +80,75 @@ export function PlyrPlayer({
         player.on("ended", onEnded);
       }
 
-      cleanup = () => {
-        player.destroy();
-        hls?.destroy();
-      };
+      setInitialized(true);
     };
 
     initPlayer();
 
     return () => {
-      cleanup?.();
-    };
-  }, [src, onTimeUpdate, onEnded]);
+      mounted = false;
+      const player = playerRef.current;
+      const hls = hlsRef.current;
 
-  return (
-    <video ref={videoRef} playsInline poster={poster}>
-      <track kind="captions" />
-    </video>
-  );
+      if (player) {
+        try {
+          player.destroy();
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+      if (hls) {
+        try {
+          hls.destroy();
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+      // Clear the container
+      if (container) {
+        container.innerHTML = "";
+      }
+      playerRef.current = null;
+      hlsRef.current = null;
+      videoRef.current = null;
+      setInitialized(false);
+    };
+  }, [onTimeUpdate, onEnded]);
+
+  // Update source when src changes or player is initialized
+  useEffect(() => {
+    if (!initialized) return;
+
+    const el = videoRef.current;
+    const player = playerRef.current;
+    if (!el || !player) return;
+
+    // Clean up old HLS instance
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+
+    // Update poster
+    if (poster) {
+      el.poster = poster;
+    }
+
+    // Load new source
+    if (src.endsWith(".m3u8") && Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(src);
+      hls.attachMedia(el);
+      hlsRef.current = hls;
+    } else {
+      el.src = src;
+    }
+
+    // Autoplay if requested
+    if (autoplay) {
+      player.play();
+    }
+  }, [initialized, src, poster, autoplay]);
+
+  return <div ref={containerRef} />;
 }
