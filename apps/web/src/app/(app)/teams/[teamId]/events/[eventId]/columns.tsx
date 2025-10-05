@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -65,7 +65,9 @@ export const columns: ColumnDef<Clip>[] = [
     accessorKey: "tags",
     header: "Tags",
     cell: ({ row }) => {
-      const tags = row.getValue("tags") as Array<{ id: number; tag: string }> | undefined;
+      const tags = row.getValue("tags") as
+        | Array<{ id: number; tag: string }>
+        | undefined;
       if (!tags || tags.length === 0) {
         return <span className="text-muted-foreground text-sm">No tags</span>;
       }

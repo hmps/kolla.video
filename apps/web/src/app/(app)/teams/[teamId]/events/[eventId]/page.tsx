@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import { CommentSection } from "@/components/comment-section";
 import { PlyrPlayer } from "@/components/plyr-player";
 import {
   AlertDialog,
@@ -15,7 +16,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,13 +25,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useTRPC } from "@/trpc/client";
@@ -181,38 +175,48 @@ export default function EventDetailPage({
         </div>
       </header>
       <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
-        {/* Large Player Section */}
-        <Card>
-          <CardContent className="p-0">
-            {typeof "window" !== "undefined" && selectedClip ? (
-              selectedClip.status === "ready" && selectedClip.hlsPrefix ? (
-                <PlyrPlayer
-                  src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
-                  autoplay={autoplayKey > 0}
-                />
-              ) : selectedClip.storageKey ? (
-                <PlyrPlayer
-                  src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
-                  autoplay={autoplayKey > 0}
-                />
+        {/* Video Player and Comments Row */}
+        <div className="flex gap-6">
+          {/* Large Player Section */}
+          <Card className="flex-1">
+            <CardContent className="p-0">
+              {typeof "window" !== "undefined" && selectedClip ? (
+                selectedClip.status === "ready" && selectedClip.hlsPrefix ? (
+                  <PlyrPlayer
+                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
+                    autoplay={autoplayKey > 0}
+                  />
+                ) : selectedClip.storageKey ? (
+                  <PlyrPlayer
+                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
+                    autoplay={autoplayKey > 0}
+                  />
+                ) : (
+                  <div className="aspect-video bg-muted flex items-center justify-center">
+                    <p className="text-muted-foreground">
+                      {selectedClip.status === "processing"
+                        ? "Processing..."
+                        : selectedClip.status === "failed"
+                          ? "Processing failed"
+                          : "Waiting for upload"}
+                    </p>
+                  </div>
+                )
               ) : (
                 <div className="aspect-video bg-muted flex items-center justify-center">
-                  <p className="text-muted-foreground">
-                    {selectedClip.status === "processing"
-                      ? "Processing..."
-                      : selectedClip.status === "failed"
-                        ? "Processing failed"
-                        : "Waiting for upload"}
-                  </p>
+                  <p className="text-muted-foreground">Select a clip to play</p>
                 </div>
-              )
-            ) : (
-              <div className="aspect-video bg-muted flex items-center justify-center">
-                <p className="text-muted-foreground">Select a clip to play</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Comments Section */}
+          <CommentSection
+            teamId={teamIdNum}
+            clipId={selectedClipId}
+            isCoach={team?.role === "coach"}
+          />
+        </div>
 
         {/* Data Table Section */}
         <DataTable
