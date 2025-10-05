@@ -143,12 +143,47 @@ pnpm build
 # Start production server
 pnpm start
 
+# Type check
+pnpm typecheck
+
 # Lint
 pnpm lint
+
+# Lint with auto-fix
+pnpm lint --fix
 
 # Format
 pnpm format
 ```
+
+## Code Quality Guidelines
+
+### Always Run After Making Changes
+
+1. **TypeScript Type Checking**
+   ```bash
+   pnpm typecheck
+   ```
+   - Run after any code changes to catch type errors
+   - Fix all type errors before considering the task complete
+
+2. **Linting and Formatting**
+   ```bash
+   pnpm lint --fix
+   ```
+   - Run to ensure code follows project style guidelines
+   - Auto-fixes formatting issues
+   - Address any remaining lint errors
+
+### TODO Comments
+
+- **Never leave TODO comments unimplemented**
+- If you add a TODO comment, you must implement the actual functionality
+- Check for TODO comments before completing a task:
+  ```bash
+  grep -rn "TODO" src/
+  ```
+- If a TODO represents future work that's out of scope, discuss with the user first before leaving it in the code
 
 ## Next Steps
 

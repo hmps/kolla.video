@@ -10,7 +10,7 @@ import {
   Sparkles,
   Sun,
 } from "lucide-react";
-
+import { useTheme } from "@/components/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -30,7 +30,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useTheme } from "@/components/theme-provider";
 
 export function NavUser({
   user,

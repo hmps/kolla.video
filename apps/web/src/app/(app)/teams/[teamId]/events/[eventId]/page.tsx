@@ -2,9 +2,20 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { PlyrPlayer } from "@/components/plyr-player";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -38,6 +49,7 @@ export default function EventDetailPage({
 
   const [selectedClipIndex, setSelectedClipIndex] = useState(0);
   const [commentBody, setCommentBody] = useState("");
+  const [clipToDelete, setClipToDelete] = useState<number | null>(null);
 
   const trpc = useTRPC();
   const { data: team } = useQuery(
@@ -49,7 +61,7 @@ export default function EventDetailPage({
       eventId: eventIdNum,
     }),
   );
-  const { data: clips } = useQuery(
+  const { data: clips, refetch: refetchClips } = useQuery(
     trpc.clips.byEvent.queryOptions({
       teamId: teamIdNum,
       eventId: eventIdNum,
@@ -72,6 +84,19 @@ export default function EventDetailPage({
       onSuccess: () => {
         setCommentBody("");
         refetchComments();
+      },
+    }),
+  );
+
+  const deleteClip = useMutation(
+    trpc.clips.delete.mutationOptions({
+      onSuccess: () => {
+        setClipToDelete(null);
+        // Adjust selected clip index if needed
+        if (selectedClipIndex >= (clips?.length ?? 1) - 1) {
+          setSelectedClipIndex(Math.max(0, selectedClipIndex - 1));
+        }
+        refetchClips();
       },
     }),
   );
@@ -119,6 +144,13 @@ export default function EventDetailPage({
     }
   };
 
+  const handleDeleteClip = (clipId: number) => {
+    deleteClip.mutate({
+      teamId: teamIdNum,
+      clipId,
+    });
+  };
+
   return (
     <>
       <header className="flex h-16 shrink-0 items-center gap-2">
@@ -157,169 +189,212 @@ export default function EventDetailPage({
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-          {selectedClip ? (
-            <>
-              <Card>
-                <CardContent className="p-0">
-                  {selectedClip.status === "ready" && selectedClip.hlsPrefix ? (
-                    <PlyrPlayer
-                      src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
-                    />
-                  ) : (
-                    <div className="aspect-video bg-muted flex items-center justify-center">
-                      <p className="text-muted-foreground">
-                        {selectedClip.status === "processing"
-                          ? "Processing..."
-                          : selectedClip.status === "failed"
-                            ? "Processing failed"
-                            : "Waiting for upload"}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+            {selectedClip ? (
+              <>
+                <Card>
+                  <CardContent className="p-0">
+                    {selectedClip.status === "ready" &&
+                    selectedClip.hlsPrefix ? (
+                      <PlyrPlayer
+                        src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
+                      />
+                    ) : (
+                      <div className="aspect-video bg-muted flex items-center justify-center">
+                        <p className="text-muted-foreground">
+                          {selectedClip.status === "processing"
+                            ? "Processing..."
+                            : selectedClip.status === "failed"
+                              ? "Processing failed"
+                              : "Waiting for upload"}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Clip Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div>
-                    <span className="font-medium">Status:</span>{" "}
-                    <Badge
-                      variant={
-                        selectedClip.status === "ready"
-                          ? "default"
-                          : selectedClip.status === "failed"
-                            ? "destructive"
-                            : "secondary"
-                      }
-                    >
-                      {selectedClip.status}
-                    </Badge>
-                  </div>
-                  {selectedClip.tags && selectedClip.tags.length > 0 && (
-                    <div>
-                      <span className="font-medium">Tags:</span>{" "}
-                      {selectedClip.tags.map((t) => (
-                        <Badge key={t.id} variant="outline" className="ml-1">
-                          {t.tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {team?.role === "coach" && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Comments</CardTitle>
+                    <CardTitle>Clip Details</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <form onSubmit={handleSubmitComment} className="space-y-2">
-                      <Textarea
-                        value={commentBody}
-                        onChange={(e) => setCommentBody(e.target.value)}
-                        placeholder="Add a comment... (Press 'c' to focus)"
-                        rows={3}
-                      />
-                      <Button
-                        type="submit"
-                        disabled={!commentBody.trim() || addComment.isPending}
+                  <CardContent className="space-y-2">
+                    <div>
+                      <span className="font-medium">Status:</span>{" "}
+                      <Badge
+                        variant={
+                          selectedClip.status === "ready"
+                            ? "default"
+                            : selectedClip.status === "failed"
+                              ? "destructive"
+                              : "secondary"
+                        }
                       >
-                        Add Comment
-                      </Button>
-                    </form>
-
-                    {comments && comments.length > 0 && (
-                      <div className="space-y-3 mt-4">
-                        {comments.map((comment) => (
-                          <div
-                            key={comment.id}
-                            className="border-l-2 pl-3 py-1"
-                          >
-                            <p className="text-sm font-medium">
-                              {comment.author.email}
-                            </p>
-                            <p className="text-sm">{comment.body}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {format(new Date(comment.createdAt), "PPp")}
-                            </p>
-                          </div>
+                        {selectedClip.status}
+                      </Badge>
+                    </div>
+                    {selectedClip.tags && selectedClip.tags.length > 0 && (
+                      <div>
+                        <span className="font-medium">Tags:</span>{" "}
+                        {selectedClip.tags.map((t) => (
+                          <Badge key={t.id} variant="outline" className="ml-1">
+                            {t.tag}
+                          </Badge>
                         ))}
                       </div>
                     )}
                   </CardContent>
                 </Card>
-              )}
-            </>
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground">
-                  No clips yet. Upload some to get started.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+
+                {team?.role === "coach" && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Comments</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <form
+                        onSubmit={handleSubmitComment}
+                        className="space-y-2"
+                      >
+                        <Textarea
+                          value={commentBody}
+                          onChange={(e) => setCommentBody(e.target.value)}
+                          placeholder="Add a comment... (Press 'c' to focus)"
+                          rows={3}
+                        />
+                        <Button
+                          type="submit"
+                          disabled={!commentBody.trim() || addComment.isPending}
+                        >
+                          Add Comment
+                        </Button>
+                      </form>
+
+                      {comments && comments.length > 0 && (
+                        <div className="space-y-3 mt-4">
+                          {comments.map((comment) => (
+                            <div
+                              key={comment.id}
+                              className="border-l-2 pl-3 py-1"
+                            >
+                              <p className="text-sm font-medium">
+                                {comment.author.email}
+                              </p>
+                              <p className="text-sm">{comment.body}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(comment.createdAt), "PPp")}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <p className="text-muted-foreground">
+                    No clips yet. Upload some to get started.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div>
             <Card>
-            <CardHeader>
-              <CardTitle>Clips</CardTitle>
-              <CardDescription>
-                Use J/K to navigate • {clips?.length ?? 0} clips
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {clips && clips.length > 0 ? (
-                <div className="space-y-2">
-                  {clips.map((clip, index) => (
-                    <Card
-                      key={clip.id}
-                      className={`cursor-pointer transition-colors ${
-                        index === selectedClipIndex
-                          ? "bg-accent"
-                          : "hover:bg-accent/50"
-                      }`}
-                      onClick={() => setSelectedClipIndex(index)}
-                    >
-                      <CardHeader className="p-3">
-                        <div className="flex justify-between items-start">
-                          <div className="text-sm">
-                            <p className="font-medium">Clip #{index + 1}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {clip.status}
-                            </p>
-                          </div>
-                          {clip.tags && clip.tags.length > 0 && (
-                            <div className="flex gap-1">
-                              {clip.tags.map((t) => (
-                                <Badge
-                                  key={t.id}
-                                  variant="secondary"
-                                  className="text-xs"
-                                >
-                                  {t.tag}
-                                </Badge>
-                              ))}
+              <CardHeader>
+                <CardTitle>Clips</CardTitle>
+                <CardDescription>
+                  Use J/K to navigate • {clips?.length ?? 0} clips
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {clips && clips.length > 0 ? (
+                  <div className="space-y-2">
+                    {clips.map((clip, index) => (
+                      <Card
+                        key={clip.id}
+                        className={`cursor-pointer transition-colors ${
+                          index === selectedClipIndex
+                            ? "bg-accent"
+                            : "hover:bg-accent/50"
+                        }`}
+                        onClick={() => setSelectedClipIndex(index)}
+                      >
+                        <CardHeader className="p-3">
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="text-sm flex-1 min-w-0">
+                              <p className="font-medium">Clip #{index + 1}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {clip.status}
+                              </p>
                             </div>
-                          )}
-                        </div>
-                      </CardHeader>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No clips yet</p>
-              )}
-            </CardContent>
-          </Card>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {clip.tags && clip.tags.length > 0 && (
+                                <div className="flex gap-1">
+                                  {clip.tags.map((t) => (
+                                    <Badge
+                                      key={t.id}
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      {t.tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                              {team?.role === "coach" && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setClipToDelete(clip.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No clips yet</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
+
+      <AlertDialog
+        open={clipToDelete !== null}
+        onOpenChange={(open: boolean) => !open && setClipToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Clip</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this clip? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => clipToDelete && handleDeleteClip(clipToDelete)}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

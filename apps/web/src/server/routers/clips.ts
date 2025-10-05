@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { clipPlayers, clips, clipTags, db, events } from "db";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { getPresignedUploadUrl } from "../../lib/storage";
+import { deleteFile, getPresignedUploadUrl } from "../../lib/storage";
 import { router, teamProcedure } from "../trpc";
 
 export const clipsRouter = router({
@@ -80,7 +80,7 @@ export const clipsRouter = router({
       const uuid = crypto.randomUUID();
       const key = `originals/${input.teamId}/${input.eventId}/${uuid}.mp4`;
 
-      // Create clip row with status 'uploading'
+      // Create clip row with status 'uploaded'
       const [clip] = await db
         .insert(clips)
         .values({
@@ -88,7 +88,7 @@ export const clipsRouter = router({
           eventId: input.eventId,
           uploaderId: ctx.user.id,
           storageKey: key,
-          status: "uploading",
+          status: "uploaded",
         })
         .returning();
 
@@ -225,6 +225,45 @@ export const clipsRouter = router({
           })),
         );
       }
+
+      return { success: true };
+    }),
+
+  delete: teamProcedure
+    .input(z.object({ teamId: z.number(), clipId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify user is a coach
+      if (ctx.membership.role !== "coach") {
+        throw new Error("Only coaches can delete clips");
+      }
+
+      // Verify clip belongs to team
+      const clip = await db.query.clips.findFirst({
+        where: and(eq(clips.id, input.clipId), eq(clips.teamId, input.teamId)),
+      });
+
+      if (!clip) {
+        throw new Error("Clip not found");
+      }
+
+      // Delete from R2 storage
+      try {
+        // Delete the original file
+        await deleteFile(clip.storageKey);
+
+        // Delete HLS files if they exist
+        if (clip.hlsPrefix) {
+          // Note: This deletes the master.m3u8 file
+          // In production, you may want to recursively delete all HLS segments
+          await deleteFile(`${clip.hlsPrefix}master.m3u8`);
+        }
+      } catch (error) {
+        console.error("Error deleting files from storage:", error);
+        // Continue with database deletion even if storage deletion fails
+      }
+
+      // Delete the clip from database (cascading deletes will handle related records)
+      await db.delete(clips).where(eq(clips.id, input.clipId));
 
       return { success: true };
     }),
