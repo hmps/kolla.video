@@ -7,13 +7,6 @@ import { useRouter } from "next/navigation";
 import { use } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -23,6 +16,14 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useTRPC } from "@/trpc/client";
 
 export default function EventsPage({
@@ -74,49 +75,47 @@ export default function EventsPage({
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="container mx-auto max-w-6xl">
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Events</CardTitle>
-          <CardDescription>Games and practices</CardDescription>
-        </CardHeader>
-        <CardContent>
           {events && events.length > 0 ? (
-            <div className="space-y-2">
-              {events.map((event) => (
-                <Card
-                  key={event.id}
-                  className="cursor-pointer hover:bg-accent transition-colors"
-                  onClick={() =>
-                    router.push(`/teams/${teamId}/events/${event.id}`)
-                  }
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">{event.title}</CardTitle>
-                        <CardDescription>
-                          {format(new Date(event.date), "PPP")} •{" "}
-                          <span className="capitalize">{event.type}</span>
-                        </CardDescription>
-                      </div>
-                    </div>
-                    {event.notes && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        {event.notes}
-                      </p>
-                    )}
-                  </CardHeader>
-                </Card>
-              ))}
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Event</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Notes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {events.map((event) => (
+                    <TableRow
+                      key={event.id}
+                      className="cursor-pointer"
+                      onClick={() =>
+                        router.push(`/teams/${teamId}/events/${event.id}`)
+                      }
+                    >
+                      <TableCell className="font-medium">{event.title}</TableCell>
+                      <TableCell>{format(new Date(event.date), "PPP")}</TableCell>
+                      <TableCell className="capitalize">{event.type}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {event.notes || "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ) : (
-            <p className="text-muted-foreground">
-              No events yet. Create one to get started.
-            </p>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-muted-foreground mb-4">
+                No events yet. Create one to get started.
+              </p>
+              <Link href={`/teams/${teamId}/events/new`}>
+                <Button>Create Your First Event</Button>
+              </Link>
+            </div>
           )}
-        </CardContent>
-      </Card>
         </div>
       </div>
     </>

@@ -35,9 +35,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       title: "Teams",
-      url: "/teams/new",
-      icon: Plus,
+      url: "/teams",
+      icon: Users,
       items: [
+        {
+          title: "All Teams",
+          url: "/teams",
+        },
         {
           title: "Create Team",
           url: "/teams/new",
