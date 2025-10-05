@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { clipPlayers, clips, clipTags, db, events } from "db";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { getPresignedUploadUrl } from "../../lib/storage";
 import { router, teamProcedure } from "../trpc";
 
 export const clipsRouter = router({
@@ -79,7 +80,7 @@ export const clipsRouter = router({
       const uuid = crypto.randomUUID();
       const key = `originals/${input.teamId}/${input.eventId}/${uuid}.mp4`;
 
-      // Create clip row with status 'uploaded'
+      // Create clip row with status 'uploading'
       const [clip] = await db
         .insert(clips)
         .values({
@@ -87,20 +88,43 @@ export const clipsRouter = router({
           eventId: input.eventId,
           uploaderId: ctx.user.id,
           storageKey: key,
-          status: "uploaded",
+          status: "uploading",
         })
         .returning();
 
-      // TODO: Generate presigned POST for R2
-      // For now, return placeholder
+      // Generate presigned PUT URL for R2
+      const presignedUrl = await getPresignedUploadUrl({ key });
+
       return {
         clipId: clip.id,
         key,
-        presignedPost: {
-          url: process.env.S3_ENDPOINT || "",
-          fields: {},
-        },
+        presignedUrl,
       };
+    }),
+
+  confirmUpload: teamProcedure
+    .input(z.object({ teamId: z.number(), clipId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify user is a coach
+      if (ctx.membership.role !== "coach") {
+        throw new Error("Only coaches can upload clips");
+      }
+
+      const clip = await db.query.clips.findFirst({
+        where: and(eq(clips.id, input.clipId), eq(clips.teamId, input.teamId)),
+      });
+
+      if (!clip) {
+        throw new Error("Clip not found");
+      }
+
+      // Update status to uploaded
+      await db
+        .update(clips)
+        .set({ status: "uploaded" })
+        .where(eq(clips.id, input.clipId));
+
+      return { success: true };
     }),
 
   enqueueProcessing: teamProcedure

@@ -39,6 +39,7 @@ export default function UploadPage({
 
   const trpc = useTRPC();
   const presignUpload = useMutation(trpc.clips.presignUpload.mutationOptions());
+  const confirmUpload = useMutation(trpc.clips.confirmUpload.mutationOptions());
   const enqueueProcessing = useMutation(
     trpc.clips.enqueueProcessing.mutationOptions(),
   );
@@ -59,9 +60,24 @@ export default function UploadPage({
           size: file.size,
         });
 
-        // TODO: Actually upload to S3 using presigned POST
-        // For now, just simulate upload
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // Upload to R2 using presigned URL
+        const uploadResponse = await fetch(result.presignedUrl, {
+          method: "PUT",
+          body: file,
+          headers: {
+            "Content-Type": file.type,
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Upload to storage failed");
+        }
+
+        // Confirm upload completed
+        await confirmUpload.mutateAsync({
+          teamId: teamIdNum,
+          clipId: result.clipId,
+        });
 
         setFiles((prev) => {
           const next = [...prev];
@@ -97,7 +113,7 @@ export default function UploadPage({
         });
       }
     },
-    [teamIdNum, eventIdNum, presignUpload, enqueueProcessing],
+    [teamIdNum, eventIdNum, presignUpload, confirmUpload, enqueueProcessing],
   );
 
   const onDrop = useCallback(
