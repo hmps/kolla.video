@@ -189,7 +189,7 @@ export default function EventDetailPage({
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            {selectedClip ? (
+            {typeof "window" !== "undefined" && selectedClip ? (
               <>
                 <Card>
                   <CardContent className="p-0">
@@ -197,6 +197,10 @@ export default function EventDetailPage({
                     selectedClip.hlsPrefix ? (
                       <PlyrPlayer
                         src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
+                      />
+                    ) : selectedClip.storageKey ? (
+                      <PlyrPlayer
+                        src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
                       />
                     ) : (
                       <div className="aspect-video bg-muted flex items-center justify-center">

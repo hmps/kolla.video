@@ -1,7 +1,6 @@
 "use client";
 
 import Hls from "hls.js";
-import Plyr from "plyr";
 import { useEffect, useRef } from "react";
 
 interface PlyrPlayerProps {
@@ -18,7 +17,7 @@ export function PlyrPlayer({
   onEnded,
 }: PlyrPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const playerRef = useRef<Plyr | null>(null);
+  const playerRef = useRef<any>(null);
   const hlsRef = useRef<Hls | null>(null);
 
   useEffect(() => {
@@ -26,44 +25,56 @@ export function PlyrPlayer({
     if (!el) return;
 
     let hls: Hls | null = null;
+    let cleanup: (() => void) | undefined;
 
-    if (Hls.isSupported() && src.endsWith(".m3u8")) {
-      hls = new Hls();
-      hls.loadSource(src);
-      hls.attachMedia(el);
-      hlsRef.current = hls;
-    } else {
-      el.src = src;
-    }
+    const initPlayer = async () => {
+      if (src.endsWith(".m3u8") && Hls.isSupported()) {
+        hls = new Hls();
+        hls.loadSource(src);
+        hls.attachMedia(el);
+        hlsRef.current = hls;
+      } else if (el.canPlayType("video/mp4")) {
+        el.src = src;
+      } else {
+        el.src = src;
+      }
 
-    const player = new Plyr(el, {
-      controls: [
-        "play",
-        "progress",
-        "current-time",
-        "mute",
-        "volume",
-        "settings",
-        "fullscreen",
-      ],
-      settings: ["quality", "speed"],
-    });
-
-    playerRef.current = player;
-
-    if (onTimeUpdate) {
-      player.on("timeupdate", () => {
-        onTimeUpdate(player.currentTime);
+      const Plyr = (await import("plyr")).default;
+      const player = new Plyr(el, {
+        controls: [
+          "play",
+          "progress",
+          "current-time",
+          "mute",
+          "volume",
+          "settings",
+          "fullscreen",
+        ],
+        settings: ["quality", "speed"],
       });
-    }
 
-    if (onEnded) {
-      player.on("ended", onEnded);
-    }
+      playerRef.current = player;
+
+      if (onTimeUpdate) {
+        player.on("timeupdate", () => {
+          onTimeUpdate(player.currentTime);
+        });
+      }
+
+      if (onEnded) {
+        player.on("ended", onEnded);
+      }
+
+      cleanup = () => {
+        player.destroy();
+        hls?.destroy();
+      };
+    };
+
+    initPlayer();
 
     return () => {
-      player.destroy();
-      hls?.destroy();
+      cleanup?.();
     };
   }, [src, onTimeUpdate, onEnded]);
 
