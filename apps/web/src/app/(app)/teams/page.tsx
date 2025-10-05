@@ -1,17 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
-  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -26,22 +22,10 @@ import {
 } from "@/components/ui/table";
 import { useTRPC } from "@/trpc/client";
 
-export default function EventsPage({
-  params,
-}: {
-  params: Promise<{ teamId: string }>;
-}) {
-  const { teamId } = use(params);
+export default function TeamsPage() {
   const router = useRouter();
-  const teamIdNum = Number.parseInt(teamId, 10);
-
   const trpc = useTRPC();
-  const { data: team } = useQuery(
-    trpc.teams.get.queryOptions({ teamId: teamIdNum }),
-  );
-  const { data: events } = useQuery(
-    trpc.events.list.queryOptions({ teamId: teamIdNum }),
-  );
+  const { data: teams } = useQuery(trpc.teams.list.queryOptions());
 
   return (
     <>
@@ -55,56 +39,39 @@ export default function EventsPage({
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{team?.name || "Team"}</BreadcrumbPage>
+                <BreadcrumbPage>Teams</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         </div>
         <div className="ml-auto flex items-center gap-2 px-4">
-          <Link href={`/teams/${teamId}/players`}>
-            <Button variant="outline">Roster</Button>
-          </Link>
-          <Link href={`/teams/${teamId}/events/new`}>
-            <Button>New Event</Button>
+          <Link href="/teams/new">
+            <Button>Create Team</Button>
           </Link>
         </div>
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="container mx-auto max-w-6xl">
-          {events && events.length > 0 ? (
+          {teams && teams.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Event</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Notes</TableHead>
+                    <TableHead>Team Name</TableHead>
+                    <TableHead>Members</TableHead>
+                    <TableHead>My Role</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {events.map((event) => (
+                  {teams.map((team) => (
                     <TableRow
-                      key={event.id}
+                      key={team.id}
                       className="cursor-pointer"
-                      onClick={() =>
-                        router.push(`/teams/${teamId}/events/${event.id}`)
-                      }
+                      onClick={() => router.push(`/teams/${team.id}/events`)}
                     >
-                      <TableCell className="font-medium">
-                        {event.title}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(event.date), "PPP")}
-                      </TableCell>
-                      <TableCell className="capitalize">{event.type}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {event.notes || "-"}
-                      </TableCell>
+                      <TableCell className="font-medium">{team.name}</TableCell>
+                      <TableCell>{team.memberCount}</TableCell>
+                      <TableCell className="capitalize">{team.role}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -113,10 +80,10 @@ export default function EventsPage({
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-muted-foreground mb-4">
-                No events yet. Create one to get started.
+                No teams yet. Create one to get started.
               </p>
-              <Link href={`/teams/${teamId}/events/new`}>
-                <Button>Create Your First Event</Button>
+              <Link href="/teams/new">
+                <Button>Create Your First Team</Button>
               </Link>
             </div>
           )}

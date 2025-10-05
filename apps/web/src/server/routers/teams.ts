@@ -1,5 +1,5 @@
 import { db, teamMemberships, teams, users } from "db";
-import { eq } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 
@@ -12,10 +12,22 @@ export const teamsRouter = router({
       },
     });
 
-    return memberships.map((m) => ({
-      ...m.team,
-      role: m.role,
-    }));
+    const teamsWithCounts = await Promise.all(
+      memberships.map(async (m) => {
+        const [{ count: memberCount }] = await db
+          .select({ count: count() })
+          .from(teamMemberships)
+          .where(eq(teamMemberships.teamId, m.team.id));
+
+        return {
+          ...m.team,
+          role: m.role,
+          memberCount,
+        };
+      }),
+    );
+
+    return teamsWithCounts;
   }),
 
   create: protectedProcedure

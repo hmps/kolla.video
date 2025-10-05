@@ -4,6 +4,7 @@ import { db, users } from "db";
 import { eq } from "drizzle-orm";
 import { cache } from "react";
 import "server-only";
+import { s3Client } from "@/lib/s3";
 
 export const createContext = cache(async () => {
   const { userId } = await auth();
@@ -22,6 +23,7 @@ export const createContext = cache(async () => {
   return {
     clerkUserId: userId,
     user: dbUser,
+    s3: s3Client,
   };
 });
 

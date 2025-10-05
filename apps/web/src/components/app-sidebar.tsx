@@ -1,19 +1,11 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import {
-  Home,
-  Video,
-  Users,
-  Calendar,
-  Settings2,
-  Plus,
-} from "lucide-react"
-import { useUser } from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs";
+import { Home, Users, Video } from "lucide-react";
+import type * as React from "react";
 
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
+import { NavMain } from "@/components/nav-main";
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -22,10 +14,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useUser()
+  const { user } = useUser();
 
   const navMain = [
     {
@@ -48,7 +40,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
       ],
     },
-  ]
+  ];
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -73,12 +65,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={{
-          name: user?.fullName || user?.firstName || "User",
-          email: user?.primaryEmailAddress?.emailAddress || "",
-          avatar: user?.imageUrl || "",
-        }} />
+        <NavUser
+          user={{
+            name: user?.fullName || user?.firstName || "User",
+            email: user?.primaryEmailAddress?.emailAddress || "",
+            avatar: user?.imageUrl || "",
+          }}
+        />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

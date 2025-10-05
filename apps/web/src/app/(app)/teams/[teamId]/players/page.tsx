@@ -1,8 +1,15 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { use, useState } from "react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,14 +20,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useTRPC } from "@/trpc/client";
@@ -114,100 +113,99 @@ export default function PlayersPage({
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="container mx-auto max-w-4xl">
-
-      {isAdding && isCoach && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Add New Player</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Player name"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="number">Number (optional)</Label>
-                  <Input
-                    id="number"
-                    type="number"
-                    value={number}
-                    onChange={(e) => setNumber(e.target.value)}
-                    placeholder="Jersey number"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={createPlayer.isPending}>
-                  {createPlayer.isPending ? "Adding..." : "Add Player"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsAdding(false);
-                    setName("");
-                    setNumber("");
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Players</CardTitle>
-          <CardDescription>{players?.length ?? 0} players</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {players && players.length > 0 ? (
-            <div className="space-y-2">
-              {players.map((player) => (
-                <div
-                  key={player.id}
-                  className="flex justify-between items-center p-3 border rounded-lg"
-                >
-                  <div>
-                    <p className="font-medium">
-                      {player.number && `#${player.number} `}
-                      {player.name}
-                    </p>
+          {isAdding && isCoach && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Add New Player</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="name">Name</Label>
+                      <Input
+                        id="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Player name"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="number">Number (optional)</Label>
+                      <Input
+                        id="number"
+                        type="number"
+                        value={number}
+                        onChange={(e) => setNumber(e.target.value)}
+                        placeholder="Jersey number"
+                      />
+                    </div>
                   </div>
-                  {isCoach && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() =>
-                        deletePlayer.mutate({
-                          teamId: teamIdNum,
-                          playerId: player.id,
-                        })
-                      }
-                    >
-                      Remove
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={createPlayer.isPending}>
+                      {createPlayer.isPending ? "Adding..." : "Add Player"}
                     </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">
-              No players yet. {isCoach && "Add some to get started."}
-            </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setIsAdding(false);
+                        setName("");
+                        setNumber("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Players</CardTitle>
+              <CardDescription>{players?.length ?? 0} players</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {players && players.length > 0 ? (
+                <div className="space-y-2">
+                  {players.map((player) => (
+                    <div
+                      key={player.id}
+                      className="flex justify-between items-center p-3 border rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {player.number && `#${player.number} `}
+                          {player.name}
+                        </p>
+                      </div>
+                      {isCoach && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() =>
+                            deletePlayer.mutate({
+                              teamId: teamIdNum,
+                              playerId: player.id,
+                            })
+                          }
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">
+                  No players yet. {isCoach && "Add some to get started."}
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </>
