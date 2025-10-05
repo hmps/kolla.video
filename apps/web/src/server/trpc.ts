@@ -47,12 +47,13 @@ const isAuthed = t.middleware(async ({ ctx, next }) => {
 });
 
 // Middleware to check team membership and role
-const isTeamMember = t.middleware(async ({ ctx, input, next }) => {
+const isTeamMember = t.middleware(async ({ ctx, getRawInput, next }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 
-  const teamId = (input as { teamId?: number }).teamId;
+  const rawInput = await getRawInput();
+  const teamId = (rawInput as { teamId?: number }).teamId;
   if (!teamId) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -83,12 +84,13 @@ const isTeamMember = t.middleware(async ({ ctx, input, next }) => {
 });
 
 // Middleware to ensure user is a coach
-const isCoach = t.middleware(async ({ ctx, input, next }) => {
+const isCoach = t.middleware(async ({ ctx, getRawInput, next }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 
-  const teamId = (input as { teamId?: number }).teamId;
+  const rawInput = await getRawInput();
+  const teamId = (rawInput as { teamId?: number }).teamId;
   if (!teamId) {
     throw new TRPCError({
       code: "BAD_REQUEST",

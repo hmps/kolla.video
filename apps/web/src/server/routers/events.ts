@@ -36,7 +36,7 @@ export const eventsRouter = router({
         teamId: z.number(),
         type: z.enum(["game", "practice"]),
         title: z.string().min(1),
-        date: z.date(),
+        date: z.coerce.date(),
         notes: z.string().optional(),
       }),
     )
@@ -67,7 +67,7 @@ export const eventsRouter = router({
         eventId: z.number(),
         type: z.enum(["game", "practice"]).optional(),
         title: z.string().min(1).optional(),
-        date: z.date().optional(),
+        date: z.coerce.date().optional(),
         notes: z.string().optional(),
       }),
     )
