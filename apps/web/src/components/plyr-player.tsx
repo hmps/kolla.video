@@ -10,6 +10,10 @@ interface PlyrPlayerProps {
   onEnded?: () => void;
 }
 
+/**
+ *
+ * Plyr Player is an instance of https://github.com/sampotts/plyr
+ */
 export function PlyrPlayer({
   src,
   poster,
@@ -50,7 +54,11 @@ export function PlyrPlayer({
           "settings",
           "fullscreen",
         ],
+        seekTime: 1,
         settings: ["quality", "speed"],
+        keyboard: {
+          global: true,
+        },
       });
 
       playerRef.current = player;
