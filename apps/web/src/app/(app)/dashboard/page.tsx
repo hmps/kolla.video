@@ -82,7 +82,7 @@ export default function Page() {
                       <TableRow key={team.id}>
                         <TableCell>
                           <Link
-                            href={`/teams/${team.id}/events`}
+                            href={`/teams/${team.id}`}
                             className="hover:underline"
                           >
                             {team.name}
