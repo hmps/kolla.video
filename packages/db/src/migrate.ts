@@ -3,6 +3,8 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { createClient } from "@libsql/client";
 
 const runMigrations = async () => {
+  console.log("Running migrations for database...", process.env.DATABASE_URL );
+
   const client = createClient({
     url: process.env.DATABASE_URL ?? "file:../../data/app.sqlite",
   });
