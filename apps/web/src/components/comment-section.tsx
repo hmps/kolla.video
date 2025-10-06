@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useTRPC } from "@/trpc/client";
 
@@ -38,7 +39,11 @@ export const CommentSection = memo(function CommentSection({
 
   const trpc = useTRPC();
 
-  const { data: comments, refetch: refetchComments } = useQuery(
+  const {
+    data: comments,
+    refetch: refetchComments,
+    isLoading: isLoadingComments,
+  } = useQuery(
     trpc.comments.byClip.queryOptions(
       {
         teamId,
@@ -126,7 +131,11 @@ export const CommentSection = memo(function CommentSection({
 
         <ScrollArea className="flex-1 px-4">
           <div className="space-y-4 py-4">
-            {comments && comments.length > 0 ? (
+            {isLoadingComments ? (
+              <div className="flex items-center justify-center py-8">
+                <Spinner className="size-6" />
+              </div>
+            ) : comments && comments.length > 0 ? (
               comments.map((comment) => (
                 <div key={comment.id} className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">

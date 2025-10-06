@@ -16,9 +16,18 @@ export type Clip = {
   name?: string | null;
   status: string;
   tags?: Array<{ id: number; tag: string }>;
+  comments?: Array<{ id: number }>;
 };
 
-function EditableNameCell({ clip, index, isCoach }: { clip: Clip; index: number; isCoach: boolean }) {
+function EditableNameCell({
+  clip,
+  index,
+  isCoach,
+}: {
+  clip: Clip;
+  index: number;
+  isCoach: boolean;
+}) {
   const params = useParams<{ teamId: string; eventId: string }>();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(clip.name ?? "");
@@ -342,6 +351,21 @@ export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
     cell: ({ row }) => {
       const clip = row.original;
       return <EditableTagsCell clip={clip} isCoach={isCoach} />;
+    },
+  },
+  {
+    accessorKey: "comments",
+    header: "Comments",
+    size: 90,
+    maxSize: 90,
+    minSize: 90,
+    cell: ({ row }) => {
+      const commentCount = row.original.comments?.length ?? 0;
+      return (
+        <div className="text-center text-muted-foreground text-sm">
+          {commentCount > 0 ? commentCount : "—"}
+        </div>
+      );
     },
   },
 ];

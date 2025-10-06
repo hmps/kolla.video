@@ -22,6 +22,7 @@ export const clipsRouter = router({
             },
           },
           uploader: true,
+          comments: true,
         },
         orderBy: (clips, { asc }) => [asc(clips.index)],
       });
