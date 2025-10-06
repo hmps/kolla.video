@@ -167,13 +167,13 @@ importers:
       drizzle-orm:
         specifier: 0.44.6
         version: 0.44.6(@libsql/client@0.15.15)
+      tsx:
+        specifier: 4.20.6
+        version: 4.20.6
     devDependencies:
       drizzle-kit:
         specifier: 0.31.5
         version: 0.31.5
-      tsx:
-        specifier: 4.20.6
-        version: 4.20.6
 
 packages:
 

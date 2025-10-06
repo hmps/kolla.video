@@ -19,10 +19,10 @@
   "packageManager": "pnpm@10.17.1",
   "dependencies": {
     "@libsql/client": "0.15.15",
-    "drizzle-orm": "0.44.6"
+    "drizzle-orm": "0.44.6",
+    "tsx": "4.20.6"
   },
   "devDependencies": {
-    "drizzle-kit": "0.31.5",
-    "tsx": "4.20.6"
+    "drizzle-kit": "0.31.5"
   }
 }
