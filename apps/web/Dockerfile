@@ -32,6 +32,10 @@ COPY pnpm-workspace.yaml package.json ./
 COPY apps/web ./apps/web
 COPY packages/db ./packages/db
 
+# Run database migrations to create schema files
+WORKDIR /app/packages/db
+RUN pnpm db:migrate
+
 # Build the application
 # Create a temporary database directory for build (relative to apps/web)
 RUN mkdir -p /app/data && touch /app/data/app.sqlite
@@ -43,10 +47,6 @@ RUN echo "=== Checking standalone output here ===" && \
     ls -la /app/apps/web/.next/standalone && \
     echo "=== Looking for server.js here ===" && \
     find /app/apps/web/.next/standalone -name "server.js"
-
-# Run database migrations to create schema files
-WORKDIR /app/packages/db
-RUN pnpm db:migrate
 
 # Stage 4: Extract production dependencies with pnpm deploy
 FROM base AS dependencies
