@@ -46,6 +46,7 @@ export const events = sqliteTable("events", {
   type: text("type", { enum: ["game", "practice"] }).notNull(),
   title: text("title").notNull(),
   date: integer("date", { mode: "timestamp" }).notNull(),
+  venue: text("venue"),
   notes: text("notes"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()

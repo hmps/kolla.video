@@ -46,6 +46,7 @@ export default function NewEventPage({
   const [type, setType] = useState<"game" | "practice">("game");
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
+  const [venue, setVenue] = useState("");
   const [notes, setNotes] = useState("");
 
   const trpc = useTRPC();
@@ -69,6 +70,7 @@ export default function NewEventPage({
         type,
         title: title.trim(),
         date: new Date(date),
+        venue: venue.trim() || undefined,
         notes: notes.trim() || undefined,
       });
     }
@@ -150,6 +152,16 @@ export default function NewEventPage({
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="venue">Venue (optional)</Label>
+                  <Input
+                    id="venue"
+                    value={venue}
+                    onChange={(e) => setVenue(e.target.value)}
+                    placeholder="e.g., Home Field, Main Arena"
                   />
                 </div>
 

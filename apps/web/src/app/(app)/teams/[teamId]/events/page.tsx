@@ -91,6 +91,7 @@ export default function EventsPage({
                     <TableHead>Event</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead>Venue</TableHead>
                     <TableHead>Notes</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
@@ -111,6 +112,9 @@ export default function EventsPage({
                         {format(new Date(event.date), "PPP")}
                       </TableCell>
                       <TableCell className="capitalize">{event.type}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {event.venue || "-"}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
                         {event.notes || "-"}
                       </TableCell>

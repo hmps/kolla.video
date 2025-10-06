@@ -37,6 +37,7 @@ export const eventsRouter = router({
         type: z.enum(["game", "practice"]),
         title: z.string().min(1),
         date: z.coerce.date(),
+        venue: z.string().optional(),
         notes: z.string().optional(),
       }),
     )
@@ -53,6 +54,7 @@ export const eventsRouter = router({
           type: input.type,
           title: input.title,
           date: input.date,
+          venue: input.venue,
           notes: input.notes,
         })
         .returning();
@@ -68,6 +70,7 @@ export const eventsRouter = router({
         type: z.enum(["game", "practice"]).optional(),
         title: z.string().min(1).optional(),
         date: z.coerce.date().optional(),
+        venue: z.string().optional(),
         notes: z.string().optional(),
       }),
     )

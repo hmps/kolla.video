@@ -38,6 +38,7 @@ type Event = {
   title: string;
   date: Date;
   type: "game" | "practice";
+  venue: string | null;
   notes: string | null;
 };
 
@@ -52,6 +53,7 @@ export function EditEventDialog({
   const [title, setTitle] = useState(event.title);
   const [date, setDate] = useState<Date>(new Date(event.date));
   const [type, setType] = useState<"game" | "practice">(event.type);
+  const [venue, setVenue] = useState(event.venue || "");
   const [notes, setNotes] = useState(event.notes || "");
 
   const trpc = useTRPC();
@@ -76,6 +78,7 @@ export function EditEventDialog({
       title,
       date,
       type,
+      venue,
       notes,
     });
   };
@@ -152,6 +155,16 @@ export function EditEventDialog({
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="venue">Venue</Label>
+              <Input
+                id="venue"
+                value={venue}
+                onChange={(e) => setVenue(e.target.value)}
+                placeholder="e.g., Home Field, Main Arena"
+              />
             </div>
 
             <div className="grid gap-2">
