@@ -27,7 +27,8 @@ export async function GET() {
         ? {
             id: dbUser.id,
             email: dbUser.email,
-            name: dbUser.name,
+            firstName: dbUser.firstName,
+            lastName: dbUser.lastName,
             createdAt: dbUser.createdAt,
           }
         : null;
