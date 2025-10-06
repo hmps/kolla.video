@@ -26,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useTRPC } from "@/trpc/client";
+import { EditEventDialog } from "@/components/edit-event-dialog";
 
 export default function EventsPage({
   params,
@@ -91,6 +92,7 @@ export default function EventsPage({
                     <TableHead>Date</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Notes</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -111,6 +113,9 @@ export default function EventsPage({
                       <TableCell className="capitalize">{event.type}</TableCell>
                       <TableCell className="text-muted-foreground">
                         {event.notes || "-"}
+                      </TableCell>
+                      <TableCell>
+                        <EditEventDialog event={event} teamId={teamIdNum} />
                       </TableCell>
                     </TableRow>
                   ))}
