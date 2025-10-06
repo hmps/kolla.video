@@ -1,8 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { useRouter } from "next/navigation";
+import { EventsTable } from "@/components/events-table";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,19 +10,9 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useTRPC } from "@/trpc/client";
 
 export default function EventsPage() {
-  const router = useRouter();
   const trpc = useTRPC();
   const { data: events, isLoading } = useQuery(
     trpc.events.listAll.queryOptions(),
@@ -49,78 +38,12 @@ export default function EventsPage() {
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="container mx-auto max-w-6xl">
-          {isLoading ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Event</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Team</TableHead>
-                    <TableHead>Venue</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <Skeleton className="h-5 w-28" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-32" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-20" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-24" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-28" />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : events && events.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Event</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Team</TableHead>
-                    <TableHead>Venue</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {events.map((event) => (
-                    <TableRow
-                      key={event.id}
-                      className="cursor-pointer"
-                      onClick={() =>
-                        router.push(`/teams/${event.teamId}/events/${event.id}`)
-                      }
-                    >
-                      <TableCell className="font-medium">
-                        {format(new Date(event.date), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell>{event.title}</TableCell>
-                      <TableCell className="capitalize">{event.type}</TableCell>
-                      <TableCell>{event.team.name}</TableCell>
-                      <TableCell>{event.venue || "-"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
+          {!isLoading && (!events || events.length === 0) ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-muted-foreground">No events yet.</p>
             </div>
+          ) : (
+            <EventsTable events={events} isLoading={isLoading} />
           )}
         </div>
       </div>

@@ -65,7 +65,8 @@ export default function TeamsPage() {
                 </TableHeader>
                 <TableBody>
                   {Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>
+                    // biome-ignore lint/suspicious/noArrayIndexKey: skeleton loading state
+                    <TableRow key={`skeleton-${i}`}>
                       <TableCell>
                         <Skeleton className="h-5 w-32" />
                       </TableCell>

@@ -1,11 +1,9 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { use, useState } from "react";
-import { EditEventDialog } from "@/components/edit-event-dialog";
+import { EventsTable } from "@/components/events-table";
 import { NewEventDialog } from "@/components/new-event-dialog";
 import {
   Breadcrumb,
@@ -44,7 +42,6 @@ export default function TeamDetailPage({
   params: Promise<{ teamId: string }>;
 }) {
   const { teamId } = use(params);
-  const router = useRouter();
   const teamIdNum = Number.parseInt(teamId, 10);
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
   const [selectedMembershipIds, setSelectedMembershipIds] = useState<number[]>(
@@ -59,9 +56,11 @@ export default function TeamDetailPage({
   const { data: availableUsers, refetch: refetchAvailable } = useQuery(
     trpc.teams.availableUsers.queryOptions({ teamId: teamIdNum }),
   );
-  const { data: members, refetch: refetchMembers, isLoading: membersLoading } = useQuery(
-    trpc.teams.members.queryOptions({ teamId: teamIdNum }),
-  );
+  const {
+    data: members,
+    refetch: refetchMembers,
+    isLoading: membersLoading,
+  } = useQuery(trpc.teams.members.queryOptions({ teamId: teamIdNum }));
   const { data: events, isLoading: eventsLoading } = useQuery(
     trpc.events.list.queryOptions({ teamId: teamIdNum }),
   );
@@ -162,95 +161,20 @@ export default function TeamDetailPage({
               <NewEventDialog teamId={teamIdNum} />
             </div>
 
-            {eventsLoading ? (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Event</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Venue</TableHead>
-                      <TableHead>Notes</TableHead>
-                      <TableHead className="w-[50px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell>
-                          <Skeleton className="h-5 w-32" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-5 w-28" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-5 w-20" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-5 w-24" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-5 w-40" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-8 w-8" />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : events && events.length > 0 ? (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Event</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Venue</TableHead>
-                      <TableHead>Notes</TableHead>
-                      <TableHead className="w-[50px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {events.map((event) => (
-                      <TableRow
-                        key={event.id}
-                        className="cursor-pointer"
-                        onClick={() =>
-                          router.push(`/teams/${teamId}/events/${event.id}`)
-                        }
-                      >
-                        <TableCell className="font-medium">
-                          {event.title}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(event.date), "PPP")}
-                        </TableCell>
-                        <TableCell className="capitalize">{event.type}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {event.venue || "-"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {event.notes || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <EditEventDialog event={event} teamId={teamIdNum} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
+            {!eventsLoading && (!events || events.length === 0) ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <p className="mb-4 text-muted-foreground">
                   No events yet. Create one to get started.
                 </p>
                 <NewEventDialog teamId={teamIdNum} />
               </div>
+            ) : (
+              <EventsTable
+                events={events}
+                isLoading={eventsLoading}
+                showEditButton={isCoach}
+                teamId={teamIdNum}
+              />
             )}
           </div>
 
@@ -358,7 +282,8 @@ export default function TeamDetailPage({
                     </TableHeader>
                     <TableBody>
                       {Array.from({ length: 3 }).map((_, i) => (
-                        <TableRow key={i}>
+                        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton loading state
+                        <TableRow key={`skeleton-${i}`}>
                           <TableCell>
                             <Skeleton className="h-4 w-4" />
                           </TableCell>

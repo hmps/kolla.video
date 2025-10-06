@@ -194,7 +194,9 @@ export const teamsRouter = router({
       return members.map((m) => ({
         id: m.id,
         userId: m.user.id,
-        name: `${m.user.firstName || ""} ${m.user.lastName || ""}`.trim() || m.user.email,
+        name:
+          `${m.user.firstName || ""} ${m.user.lastName || ""}`.trim() ||
+          m.user.email,
         email: m.user.email,
         role: m.role,
       }));
@@ -261,9 +263,7 @@ export const teamsRouter = router({
       // Remove memberships
       await db
         .delete(teamMemberships)
-        .where(
-          eq(teamMemberships.id, input.membershipIds[0]),
-        );
+        .where(eq(teamMemberships.id, input.membershipIds[0]));
 
       // If there are multiple IDs, delete them individually
       for (let i = 1; i < input.membershipIds.length; i++) {
