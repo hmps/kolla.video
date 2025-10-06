@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { EventsTable } from "@/components/events-table";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,7 +26,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EventsTable } from "@/components/events-table";
 import { useTRPC } from "@/trpc/client";
 
 export default function Page() {
@@ -112,7 +112,8 @@ export default function Page() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!eventsLoading && (!recentEvents || recentEvents.length === 0) ? (
+              {!eventsLoading &&
+              (!recentEvents || recentEvents.length === 0) ? (
                 <div className="text-muted-foreground text-sm">
                   No events yet
                 </div>
