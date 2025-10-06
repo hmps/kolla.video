@@ -4,10 +4,18 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ChevronRight, MessageSquare, Send } from "lucide-react";
 import { memo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useTRPC } from "@/trpc/client";
 
 interface CommentSectionProps {
@@ -23,6 +31,8 @@ export const CommentSection = memo(function CommentSection({
 }: CommentSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [commentText, setCommentText] = useState("");
+  const [commentLevel, setCommentLevel] = useState<"all" | "coaches" | "private">("coaches");
+  const [targetUserId, setTargetUserId] = useState<number | undefined>();
 
   const trpc = useTRPC();
 
@@ -38,10 +48,23 @@ export const CommentSection = memo(function CommentSection({
     ),
   );
 
+  const { data: playerUsers } = useQuery(
+    trpc.comments.playerUsers.queryOptions(
+      {
+        teamId,
+      },
+      {
+        enabled: isCoach && clipId !== null,
+      },
+    ),
+  );
+
   const addComment = useMutation(
     trpc.comments.add.mutationOptions({
       onSuccess: () => {
         setCommentText("");
+        setCommentLevel("coaches");
+        setTargetUserId(undefined);
         refetchComments();
       },
     }),
@@ -50,11 +73,14 @@ export const CommentSection = memo(function CommentSection({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!clipId || !commentText.trim() || !isCoach) return;
+    if (commentLevel === "private" && !targetUserId) return;
 
     addComment.mutate({
       teamId,
       clipId,
       body: commentText.trim(),
+      level: commentLevel,
+      targetUserId,
     });
   };
 
@@ -97,12 +123,26 @@ export const CommentSection = memo(function CommentSection({
             {comments && comments.length > 0 ? (
               comments.map((comment) => (
                 <div key={comment.id} className="space-y-1">
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium">
                       {comment.author.firstName && comment.author.lastName
                         ? `${comment.author.firstName} ${comment.author.lastName}`
                         : comment.author.email}
                     </span>
+                    <Badge
+                      variant={
+                        comment.level === "all"
+                          ? "default"
+                          : comment.level === "coaches"
+                            ? "secondary"
+                            : "outline"
+                      }
+                      className="text-xs"
+                    >
+                      {comment.level === "private" && comment.targetUser
+                        ? `Private (${comment.targetUser.firstName || comment.targetUser.email})`
+                        : comment.level}
+                    </Badge>
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.createdAt), {
                         addSuffix: true,
@@ -120,23 +160,65 @@ export const CommentSection = memo(function CommentSection({
 
         {isCoach && (
           <div className="border-t p-4">
-            <form onSubmit={handleSubmit} className="space-y-2">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <Textarea
                 placeholder="Add a comment..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 className="min-h-[80px] resize-none"
               />
-              <div className="flex justify-end">
+
+              <div className="flex items-center justify-between gap-2">
+                <Select
+                  value={commentLevel}
+                  onValueChange={(value: "all" | "coaches" | "private") => {
+                    setCommentLevel(value);
+                    if (value !== "private") {
+                      setTargetUserId(undefined);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="coaches">Coaches</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="private">Private</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Button
                   type="submit"
                   size="sm"
-                  disabled={!commentText.trim() || addComment.isPending}
+                  disabled={
+                    !commentText.trim() ||
+                    addComment.isPending ||
+                    (commentLevel === "private" && !targetUserId)
+                  }
                 >
                   <Send className="mr-2 h-4 w-4" />
                   Send
                 </Button>
               </div>
+
+              {commentLevel === "private" && (
+                <Select
+                  value={targetUserId?.toString()}
+                  onValueChange={(value) => setTargetUserId(Number(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select player..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {playerUsers?.map((player) => (
+                      <SelectItem key={player.id} value={player.id.toString()}>
+                        {player.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </form>
           </div>
         )}

@@ -119,6 +119,10 @@ export const comments = sqliteTable("comments", {
     .notNull()
     .references(() => users.id),
   body: text("body").notNull(),
+  level: text("level", { enum: ["all", "coaches", "private"] })
+    .notNull()
+    .default("coaches"),
+  targetUserId: integer("target_user_id").references(() => users.id),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -228,6 +232,10 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   }),
   author: one(users, {
     fields: [comments.authorId],
+    references: [users.id],
+  }),
+  targetUser: one(users, {
+    fields: [comments.targetUserId],
     references: [users.id],
   }),
 }));
