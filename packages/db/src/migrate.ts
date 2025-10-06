@@ -4,8 +4,7 @@ import { createClient } from "@libsql/client";
 
 const runMigrations = async () => {
   const client = createClient({
-    // url: process.env.DATABASE_URL ?? "file:../../data/app.sqlite",
-    url: "file:../../data/app.sqlite",
+    url: process.env.DATABASE_URL ?? "file:../../data/app.sqlite",
   });
 
   const db = drizzle(client);
