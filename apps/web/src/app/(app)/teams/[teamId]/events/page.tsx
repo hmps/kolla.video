@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import { useTRPC } from "@/trpc/client";
 import { EditEventDialog } from "@/components/edit-event-dialog";
+import { NewEventDialog } from "@/components/new-event-dialog";
 
 export default function EventsPage({
   params,
@@ -72,9 +73,7 @@ export default function EventsPage({
           <Link href={`/teams/${teamId}/players`}>
             <Button variant="outline">Roster</Button>
           </Link>
-          <Link href={`/teams/${teamId}/events/new`}>
-            <Button>New Event</Button>
-          </Link>
+          <NewEventDialog teamId={teamIdNum} />
         </div>
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
@@ -131,9 +130,7 @@ export default function EventsPage({
               <p className="text-muted-foreground mb-4">
                 No events yet. Create one to get started.
               </p>
-              <Link href={`/teams/${teamId}/events/new`}>
-                <Button>Create Your First Event</Button>
-              </Link>
+              <NewEventDialog teamId={teamIdNum} />
             </div>
           )}
         </div>
