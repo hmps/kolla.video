@@ -2,6 +2,7 @@ import { router } from "../trpc";
 import { authRouter } from "./auth";
 import { clipsRouter } from "./clips";
 import { commentsRouter } from "./comments";
+import { dashboardRouter } from "./dashboard";
 import { eventsRouter } from "./events";
 import { playersRouter } from "./players";
 import { sharesRouter } from "./shares";
@@ -15,6 +16,7 @@ export const appRouter = router({
   clips: clipsRouter,
   comments: commentsRouter,
   shares: sharesRouter,
+  dashboard: dashboardRouter,
 });
 
 export type AppRouter = typeof appRouter;
