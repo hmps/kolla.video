@@ -1,5 +1,5 @@
 import type { WebhookEvent } from "@clerk/nextjs/server";
-import { db, users } from "@kolla/db";
+import { getDb, users } from "@kolla/db";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
@@ -12,6 +12,8 @@ export async function POST(req: Request) {
   if (!WEBHOOK_SECRET) {
     throw new Error("Please add CLERK_WEBHOOK_SECRET to .env");
   }
+
+  const db = getDb();
 
   // Get the headers
   const headerPayload = await headers();

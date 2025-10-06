@@ -1,4 +1,4 @@
-import { clips, db } from "@kolla/db";
+import { clips, getDb } from "@kolla/db";
 import { eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -14,6 +14,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { clipId, durationS, width, height, hlsPrefix, failed, reason } =
       body;
+
+    const db = await getDb();
 
     if (failed) {
       await db
