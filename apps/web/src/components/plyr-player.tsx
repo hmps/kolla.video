@@ -16,6 +16,8 @@ interface PlyrPlayerProps {
   poster?: string;
   onTimeUpdate?: (time: number) => void;
   onEnded?: () => void;
+  onPlay?: () => void;
+  onPause?: () => void;
   autoplay?: boolean;
 }
 
@@ -29,7 +31,7 @@ export interface PlyrPlayerRef {
  */
 export const PlyrPlayer = memo(
   forwardRef<PlyrPlayerRef, PlyrPlayerProps>(function PlyrPlayer(
-    { src, poster, onTimeUpdate, onEnded, autoplay = false },
+    { src, poster, onTimeUpdate, onEnded, onPlay, onPause, autoplay = false },
     ref,
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -90,6 +92,14 @@ export const PlyrPlayer = memo(
           player.on("ended", onEnded);
         }
 
+        if (onPlay) {
+          player.on("play", onPlay);
+        }
+
+        if (onPause) {
+          player.on("pause", onPause);
+        }
+
         setInitialized(true);
       };
 
@@ -123,7 +133,7 @@ export const PlyrPlayer = memo(
         videoRef.current = null;
         setInitialized(false);
       };
-    }, [onTimeUpdate, onEnded]);
+    }, [onTimeUpdate, onEnded, onPlay, onPause]);
 
     // Expose player instance via ref
     useImperativeHandle(ref, () => ({

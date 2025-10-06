@@ -53,6 +53,7 @@ export default function EventDetailPage({
   const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
   const [clipsToDelete, setClipsToDelete] = useState<number[]>([]);
   const [autoplayKey, setAutoplayKey] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const mobilePlayerRef = useRef<PlyrPlayerRef>(null);
   const desktopPlayerRef = useRef<PlyrPlayerRef>(null);
 
@@ -157,6 +158,24 @@ export default function EventDetailPage({
     }
   }, []);
 
+  const handlePlay = useCallback(() => {
+    setIsPlaying(true);
+  }, []);
+
+  const handlePause = useCallback(() => {
+    setIsPlaying(false);
+  }, []);
+
+  const togglePlayPause = useCallback(() => {
+    const player =
+      mobilePlayerRef.current?.player || desktopPlayerRef.current?.player;
+    if (player?.playing) {
+      player.pause();
+    } else if (player) {
+      player.play();
+    }
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input/textarea
@@ -256,12 +275,16 @@ export default function EventDetailPage({
                     ref={mobilePlayerRef}
                     src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
                     autoplay={autoplayKey > 0}
+                    onPlay={handlePlay}
+                    onPause={handlePause}
                   />
                 ) : selectedClip.storageKey ? (
                   <PlyrPlayer
                     ref={mobilePlayerRef}
                     src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
                     autoplay={autoplayKey > 0}
+                    onPlay={handlePlay}
+                    onPause={handlePause}
                   />
                 ) : (
                   <div className="aspect-video bg-muted flex items-center justify-center">
@@ -303,6 +326,18 @@ export default function EventDetailPage({
               disabled={!selectedClip}
             >
               <RotateCcw className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={togglePlayPause}
+              disabled={!selectedClip}
+            >
+              {isPlaying ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5" />
+              )}
             </Button>
             <Button
               variant="outline"
@@ -349,12 +384,16 @@ export default function EventDetailPage({
                           ref={desktopPlayerRef}
                           src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
                           autoplay={autoplayKey > 0}
+                          onPlay={handlePlay}
+                          onPause={handlePause}
                         />
                       ) : selectedClip.storageKey ? (
                         <PlyrPlayer
                           ref={desktopPlayerRef}
                           src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
                           autoplay={autoplayKey > 0}
+                          onPlay={handlePlay}
+                          onPause={handlePause}
                         />
                       ) : (
                         <div className="aspect-video bg-muted flex items-center justify-center">
