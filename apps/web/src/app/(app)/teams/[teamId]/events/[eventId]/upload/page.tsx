@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -61,17 +61,18 @@ export default function UploadPage({
   );
 
   const handleUpload = useCallback(
-    async (file: File, index: number) => {
+    async (file: File, fileIndex: number, clipIndex: number) => {
       try {
         setFiles((prev) => {
           const next = [...prev];
-          next[index] = { ...next[index], status: "uploading" };
+          next[fileIndex] = { ...next[fileIndex], status: "uploading" };
           return next;
         });
 
         const result = await presignUpload.mutateAsync({
           teamId: teamIdNum,
           eventId: eventIdNum,
+          index: clipIndex,
           contentType: file.type,
           size: file.size,
         });
@@ -97,8 +98,8 @@ export default function UploadPage({
 
         setFiles((prev) => {
           const next = [...prev];
-          next[index] = {
-            ...next[index],
+          next[fileIndex] = {
+            ...next[fileIndex],
             status: "processing",
             progress: 100,
             clipId: result.clipId,
@@ -114,14 +115,14 @@ export default function UploadPage({
 
         setFiles((prev) => {
           const next = [...prev];
-          next[index] = { ...next[index], status: "complete" };
+          next[fileIndex] = { ...next[fileIndex], status: "complete" };
           return next;
         });
       } catch (error) {
         setFiles((prev) => {
           const next = [...prev];
-          next[index] = {
-            ...next[index],
+          next[fileIndex] = {
+            ...next[fileIndex],
             status: "error",
             error: error instanceof Error ? error.message : "Upload failed",
           };
@@ -132,8 +133,18 @@ export default function UploadPage({
     [teamIdNum, eventIdNum, presignUpload, confirmUpload, enqueueProcessing],
   );
 
+  const queryClient = useQueryClient();
+
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
+      // First, get the starting index for these uploads
+      const { nextIndex } = await queryClient.fetchQuery(
+        trpc.clips.getNextIndex.queryOptions({
+          teamId: teamIdNum,
+          eventId: eventIdNum,
+        }),
+      );
+
       const newFiles: FileUploadState[] = acceptedFiles.map((file) => ({
         id: `${Date.now()}-${file.name}`,
         file,
@@ -142,12 +153,12 @@ export default function UploadPage({
       }));
       setFiles((prev) => [...prev, ...newFiles]);
 
-      // Start uploading each file
+      // Start uploading each file with its assigned index
       acceptedFiles.forEach((file, index) => {
-        handleUpload(file, files.length + index);
+        handleUpload(file, files.length + index, nextIndex + index);
       });
     },
-    [files.length, handleUpload],
+    [files.length, handleUpload, queryClient, trpc, teamIdNum, eventIdNum],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

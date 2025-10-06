@@ -12,6 +12,7 @@ import { useTRPC } from "@/trpc/client";
 
 export type Clip = {
   id: number;
+  index: number;
   name?: string | null;
   status: string;
   tags?: Array<{ id: number; tag: string }>;
@@ -105,9 +106,10 @@ function EditableTagsCell({ clip }: { clip: Clip }) {
   const params = useParams<{ teamId: string; eventId: string }>();
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [optimisticTags, setOptimisticTags] = useState<
-    Array<{ id: number; tag: string }> | null
-  >(null);
+  const [optimisticTags, setOptimisticTags] = useState<Array<{
+    id: number;
+    tag: string;
+  }> | null>(null);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -174,7 +176,11 @@ function EditableTagsCell({ clip }: { clip: Clip }) {
       if (inputValue.trim()) {
         addTags(inputValue);
       }
-    } else if (e.key === "Backspace" && inputValue === "" && currentTags.length > 0) {
+    } else if (
+      e.key === "Backspace" &&
+      inputValue === "" &&
+      currentTags.length > 0
+    ) {
       e.preventDefault();
       const lastTag = currentTags[currentTags.length - 1];
       removeTag(lastTag);
@@ -186,7 +192,10 @@ function EditableTagsCell({ clip }: { clip: Clip }) {
 
   if (isEditing) {
     return (
-      <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex flex-wrap items-center gap-1"
+        onClick={(e) => e.stopPropagation()}
+      >
         {currentTags.map((tag) => (
           <Badge
             key={tag.id}
@@ -274,6 +283,19 @@ export const columns: ColumnDef<Clip>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: "index",
+    header: "#",
+    size: 20,
+    maxSize: 20,
+    cell: ({ row }) => {
+      return (
+        <div className="w-5 text-right text-muted-foreground">
+          {row.original.index}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "name",

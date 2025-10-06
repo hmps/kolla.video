@@ -84,9 +84,14 @@ export async function POST(req: Request) {
   if (eventType === "user.deleted") {
     const { id } = evt.data;
 
-    await db.delete(users).where(eq(users.clerkUserId, id!));
+    if (id) {
+      await db.delete(users).where(eq(users.clerkUserId, id));
+      console.log(`User ${id} deleted from database`);
+    } else {
+      console.log("Error: No user ID found");
+      return new Response("", { status: 500 });
+    }
 
-    console.log(`User ${id} deleted from database`);
   }
 
   return new Response("", { status: 200 });

@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, unique } from "drizzle-orm/sqlite-core";
 
 // Users table
 export const users = sqliteTable("users", {
@@ -54,31 +54,38 @@ export const events = sqliteTable("events", {
 });
 
 // Clips table
-export const clips = sqliteTable("clips", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  teamId: integer("team_id")
-    .notNull()
-    .references(() => teams.id),
-  eventId: integer("event_id")
-    .notNull()
-    .references(() => events.id),
-  uploaderId: integer("uploader_id")
-    .notNull()
-    .references(() => users.id),
-  name: text("name"),
-  storageKey: text("storage_key").notNull(),
-  hlsPrefix: text("hls_prefix"),
-  durationS: real("duration_s"),
-  width: integer("width"),
-  height: integer("height"),
-  status: text("status", {
-    enum: ["uploaded", "processing", "ready", "failed"],
-  }).notNull(),
-  failReason: text("fail_reason"),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-});
+export const clips = sqliteTable(
+  "clips",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    teamId: integer("team_id")
+      .notNull()
+      .references(() => teams.id),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => events.id),
+    uploaderId: integer("uploader_id")
+      .notNull()
+      .references(() => users.id),
+    index: integer("index").notNull(),
+    name: text("name"),
+    storageKey: text("storage_key").notNull(),
+    hlsPrefix: text("hls_prefix"),
+    durationS: real("duration_s"),
+    width: integer("width"),
+    height: integer("height"),
+    status: text("status", {
+      enum: ["uploaded", "processing", "ready", "failed"],
+    }).notNull(),
+    failReason: text("fail_reason"),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => ({
+    eventIndexUnique: unique().on(table.eventId, table.index),
+  }),
+);
 
 // Clip tags table
 export const clipTags = sqliteTable("clip_tags", {

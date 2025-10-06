@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { clipPlayers, clips, clipTags, db, events } from "db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, max } from "drizzle-orm";
 import { z } from "zod";
 import { deleteFile, getPresignedUploadUrl } from "../../lib/storage";
 import { router, teamProcedure } from "../trpc";
@@ -23,8 +23,34 @@ export const clipsRouter = router({
           },
           uploader: true,
         },
-        orderBy: (clips, { desc }) => [desc(clips.createdAt)],
+        orderBy: (clips, { asc }) => [asc(clips.index)],
       });
+    }),
+
+  getNextIndex: teamProcedure
+    .input(z.object({ teamId: z.number(), eventId: z.number() }))
+    .query(async ({ input }) => {
+      // Verify event belongs to team
+      const event = await db.query.events.findFirst({
+        where: and(
+          eq(events.id, input.eventId),
+          eq(events.teamId, input.teamId),
+        ),
+      });
+
+      if (!event) {
+        throw new Error("Event not found");
+      }
+
+      // Get the max index for this event
+      const result = await db
+        .select({ maxIndex: max(clips.index) })
+        .from(clips)
+        .where(eq(clips.eventId, input.eventId));
+
+      const nextIndex = (result[0]?.maxIndex ?? 0) + 1;
+
+      return { nextIndex };
     }),
 
   get: teamProcedure
@@ -55,6 +81,7 @@ export const clipsRouter = router({
       z.object({
         teamId: z.number(),
         eventId: z.number(),
+        index: z.number(),
         contentType: z.string(),
         size: z.number(),
       }),
@@ -80,13 +107,14 @@ export const clipsRouter = router({
       const uuid = crypto.randomUUID();
       const key = `originals/${input.teamId}/${input.eventId}/${uuid}.mp4`;
 
-      // Create clip row with status 'uploaded'
+      // Create clip row with status 'uploaded' and the provided index
       const [clip] = await db
         .insert(clips)
         .values({
           teamId: input.teamId,
           eventId: input.eventId,
           uploaderId: ctx.user.id,
+          index: input.index,
           storageKey: key,
           status: "uploaded",
         })
