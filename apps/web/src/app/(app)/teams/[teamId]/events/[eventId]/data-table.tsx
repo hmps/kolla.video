@@ -41,6 +41,7 @@ function DataTableInner<TData extends { id: number }, TValue>({
     columns,
     getCoreRowModel: getCoreRowModel(),
     onRowSelectionChange: setRowSelection,
+    columnResizeMode: "onChange",
     state: {
       rowSelection,
     },
@@ -80,7 +81,14 @@ function DataTableInner<TData extends { id: number }, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      className={
+                        header.column.columnDef.maxSize
+                          ? `w-[${header.column.columnDef.size}px] max-w-[${header.column.columnDef.maxSize}px]`
+                          : ""
+                      }
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -105,6 +113,11 @@ function DataTableInner<TData extends { id: number }, TValue>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
+                      className={
+                        cell.column.columnDef.maxSize
+                          ? `w-[${cell.column.columnDef.size}px] max-w-[${cell.column.columnDef.maxSize}px]`
+                          : ""
+                      }
                       onClick={(e) => {
                         // Don't trigger row click when clicking checkbox
                         if (cell.column.id === "select") {

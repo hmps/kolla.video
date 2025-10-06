@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { clipPlayers, clips, clipTags, db, events } from "db";
+import { clipPlayers, clips, clipTags, db, events } from "@kolla/db";
 import { and, eq, max } from "drizzle-orm";
 import { z } from "zod";
 import { deleteFile, getPresignedUploadUrl } from "../../lib/storage";

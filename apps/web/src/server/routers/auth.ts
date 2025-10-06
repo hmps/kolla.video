@@ -1,5 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { db, users } from "db";
+import { db, users } from "@kolla/db";
 import { eq } from "drizzle-orm";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
 

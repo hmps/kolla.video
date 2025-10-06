@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
+import { db, users } from "@kolla/db";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { db, users } from "db";
 import { eq } from "drizzle-orm";
 import { cache } from "react";
 import "server-only";

@@ -1,4 +1,4 @@
-import { clips, comments, db, teamMemberships } from "db";
+import { clips, comments, db, teamMemberships } from "@kolla/db";
 import { and, eq, or } from "drizzle-orm";
 import { z } from "zod";
 import { router, teamProcedure } from "../trpc";
@@ -11,7 +11,7 @@ export const commentsRouter = router({
       const playerMembers = await db.query.teamMemberships.findMany({
         where: and(
           eq(teamMemberships.teamId, input.teamId),
-          eq(teamMemberships.role, "player")
+          eq(teamMemberships.role, "player"),
         ),
         with: {
           user: true,
@@ -46,14 +46,14 @@ export const commentsRouter = router({
         ? or(
             eq(comments.level, "all"),
             eq(comments.level, "coaches"),
-            eq(comments.level, "private")
+            eq(comments.level, "private"),
           )
         : or(
             eq(comments.level, "all"),
             and(
               eq(comments.level, "private"),
-              eq(comments.targetUserId, ctx.user.id)
-            )
+              eq(comments.targetUserId, ctx.user.id),
+            ),
           );
 
       return db.query.comments.findMany({

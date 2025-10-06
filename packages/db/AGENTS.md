@@ -83,7 +83,7 @@ All tables use:
 ### Import in Web App
 
 ```typescript
-import { db, users, teams, events } from "db"
+import { db, users, teams, events } from "@kolla/db"
 
 // Query
 const allTeams = await db.select().from(teams)
@@ -199,7 +199,7 @@ pnpm db:migrate
 All table schemas are exported and can be used for type inference:
 
 ```typescript
-import type { users } from "db"
+import type { users } from "@kolla/db"
 
 type User = typeof users.$inferSelect
 type NewUser = typeof users.$inferInsert

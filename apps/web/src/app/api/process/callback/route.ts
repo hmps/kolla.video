@@ -1,4 +1,4 @@
-import { clips, db } from "db";
+import { clips, db } from "@kolla/db";
 import { eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 

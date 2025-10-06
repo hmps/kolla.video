@@ -194,7 +194,7 @@ function EditableTagsCell({ clip }: { clip: Clip }) {
     return (
       <div
         className="flex flex-wrap items-center gap-1"
-        onClick={(e) => e.stopPropagation()}
+        onClickCapture={(e) => e.stopPropagation()}
       >
         {currentTags.map((tag) => (
           <Badge
@@ -262,36 +262,42 @@ function EditableTagsCell({ clip }: { clip: Clip }) {
 export const columns: ColumnDef<Clip>[] = [
   {
     id: "select",
-    size: 20,
-    maxSize: 20,
+    size: 40,
+    maxSize: 40,
+    minSize: 40,
     header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
+      <div className="flex items-center justify-start">
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      </div>
     ),
     cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
+      <div className="flex items-center justify-start">
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      </div>
     ),
     enableSorting: false,
     enableHiding: false,
   },
   {
     accessorKey: "index",
-    header: "#",
-    size: 20,
-    maxSize: 20,
+    header: () => <div className="flex items-center justify-center">#</div>,
+    size: 40,
+    maxSize: 40,
+    minSize: 40,
     cell: ({ row }) => {
       return (
-        <div className="w-5 text-right text-muted-foreground">
+        <div className="text-center text-muted-foreground">
           {row.original.index}
         </div>
       );

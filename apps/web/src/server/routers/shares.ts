@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { db, events, shareLinks } from "db";
+import { db, events, shareLinks } from "@kolla/db";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { publicProcedure, router, teamProcedure } from "../trpc";

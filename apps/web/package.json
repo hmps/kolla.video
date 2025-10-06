@@ -1,5 +1,5 @@
 {
-  "name": "kolla",
+  "name": "@kolla/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -38,7 +38,7 @@
     "client-only": "0.0.1",
     "clsx": "2.1.1",
     "date-fns": "4.1.0",
-    "db": "workspace:*",
+    "@kolla/db": "workspace:*",
     "drizzle-orm": "0.44.6",
     "hls.js": "1.6.13",
     "lucide-react": "0.544.0",

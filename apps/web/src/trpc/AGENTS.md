@@ -22,7 +22,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import { cache } from "react";
 import { auth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
-import { db, users, teamMemberships } from "db";
+import { db, users, teamMemberships } from "@kolla/db";
 
 export const createContext = cache(async () => {
   const { userId } = await auth();

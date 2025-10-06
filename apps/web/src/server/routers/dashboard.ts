@@ -1,4 +1,4 @@
-import { db, events, teamMemberships } from "db";
+import { db, events, teamMemberships } from "@kolla/db";
 import { desc, eq, sql } from "drizzle-orm";
 import { protectedProcedure, router } from "../trpc";
 
