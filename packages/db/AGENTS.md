@@ -1,6 +1,6 @@
 # Database Package
 
-Shared Drizzle ORM schema and SQLite client for VUDL application.
+Shared Drizzle ORM schema and SQLite client for Kolla application.
 
 ## Tech Stack
 

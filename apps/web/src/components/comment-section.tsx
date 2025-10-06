@@ -99,7 +99,9 @@ export function CommentSection({
                 <div key={comment.id} className="space-y-1">
                   <div className="flex items-baseline gap-2">
                     <span className="text-sm font-medium">
-                      {comment.author.email}
+                      {comment.author.firstName && comment.author.lastName
+                        ? `${comment.author.firstName} ${comment.author.lastName}`
+                        : comment.author.email}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.createdAt), {

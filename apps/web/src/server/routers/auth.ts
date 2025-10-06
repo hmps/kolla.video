@@ -29,6 +29,8 @@ export const authRouter = router({
       .values({
         clerkUserId: clerkUser.id,
         email,
+        firstName: clerkUser.firstName,
+        lastName: clerkUser.lastName,
       })
       .returning();
 

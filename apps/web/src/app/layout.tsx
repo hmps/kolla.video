@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vudl",
-  description: "Vudl is a video hosting platform",
+  title: "Kolla",
+  description: "Kolla is a video hosting platform",
 };
 
 export default function RootLayout({

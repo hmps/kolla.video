@@ -1,4 +1,4 @@
-# VUDL - Video Upload and Distribution Platform
+# Kolla - Video Upload and Distribution Platform
 
 This is a pnpm workspace monorepo for sports teams to upload, organize, and share game/practice video clips.
 
@@ -11,7 +11,7 @@ This is a pnpm workspace monorepo for sports teams to upload, organize, and shar
 ## Workspace Structure
 
 ```
-vudl/
+kolla/
 ├── apps/
 │   └── web/              # Next.js web application
 ├── packages/

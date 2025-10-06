@@ -1,6 +1,6 @@
 # Web App
 
-Next.js 15 application for VUDL video platform with dark mode UI, Clerk auth, and tRPC API.
+Next.js 15 application for Kolla video platform with dark mode UI, Clerk auth, and tRPC API.
 
 ## Tech Stack
 

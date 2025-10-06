@@ -6,6 +6,8 @@ export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   clerkUserId: text("clerk_user_id").notNull().unique(),
   email: text("email").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
