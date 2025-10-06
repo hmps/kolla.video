@@ -38,11 +38,36 @@ RUN mkdir -p /app/data && touch /app/data/app.sqlite
 WORKDIR /app/apps/web
 RUN pnpm exec next build
 
+# Debug: Check what was created
+RUN echo "=== Checking standalone output here ===" && \
+    ls -la /app/apps/web/.next/standalone && \
+    echo "=== Looking for server.js here ===" && \
+    find /app/apps/web/.next/standalone -name "server.js"
+
 # Run database migrations to create schema files
 WORKDIR /app/packages/db
 RUN pnpm db:migrate
 
-# Stage 4: Production runtime
+# Stage 4: Extract production dependencies with pnpm deploy
+FROM base AS dependencies
+WORKDIR /app
+
+# Copy package files for deploy
+COPY --from=deps /app/pnpm-workspace.yaml ./
+COPY --from=deps /app/package.json ./
+COPY --from=deps /app/apps/web/package.json ./apps/web/
+COPY --from=deps /app/packages/db/package.json ./packages/db/
+
+# Copy pnpm lock file
+COPY --from=deps /app/pnpm-lock.yaml ./
+
+# Use pnpm deploy to flatten dependencies and resolve symlinks
+# This creates a proper node_modules structure for Docker
+# --legacy flag required for pnpm v10+ to deploy without inject-workspace-packages
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm --filter=./apps/web deploy --legacy --prod /prod/web
+
+# Stage 5: Production runtime
 FROM base AS runner
 WORKDIR /app
 
@@ -50,19 +75,26 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files from builder
-COPY --from=builder /app/apps/web/public ./public
-COPY --from=builder /app/apps/web/package.json ./package.json
-
-# Copy standalone build
+# Copy standalone build - Next.js puts it at .next/standalone/
+# The standalone output mirrors the workspace structure, but includes symlinked node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+
+# Copy static assets and public files
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./public
+
+# Replace symlinked node_modules with flattened ones from deploy stage
+# This overwrites the standalone's symlinked node_modules with real files
+COPY --from=dependencies --chown=nextjs:nodejs /prod/web/node_modules ./node_modules
 
 # Copy database package for migrations
 COPY --from=builder --chown=nextjs:nodejs /app/packages/db ./packages/db
 
 # Create data directory for SQLite
 RUN mkdir -p /data && chown nextjs:nodejs /data
+
+RUN mkdir -p .next/cache && chown -R 1001:1001 .next
+RUN mkdir -p .next/cache/fetch-cache && chown -R 1001:1001 .next
 
 USER nextjs
 
@@ -72,4 +104,5 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "apps/web/server.js"]
+# The standalone build puts server.js at apps/web/server.js
+CMD ["node", "server.js"]
