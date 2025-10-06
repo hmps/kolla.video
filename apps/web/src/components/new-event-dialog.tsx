@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarIcon, Plus } from "lucide-react";
 import { useState } from "react";
+import { sv } from "react-day-picker/locale";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -139,7 +140,8 @@ export function NewEventDialog({ teamId }: { teamId: number }) {
                     mode="single"
                     selected={date}
                     onSelect={setDate}
-                    initialFocus
+                    autoFocus
+                    locale={sv}
                   />
                 </PopoverContent>
               </Popover>
