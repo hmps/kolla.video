@@ -86,7 +86,7 @@ export const clipTags = sqliteTable("clip_tags", {
   clipId: integer("clip_id")
     .notNull()
     .references(() => clips.id),
-  tag: text("tag", { enum: ["offense", "defense"] }).notNull(),
+  tag: text("tag").notNull(),
 });
 
 // Players table

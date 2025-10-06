@@ -159,7 +159,7 @@ export const clipsRouter = router({
       z.object({
         teamId: z.number(),
         clipId: z.number(),
-        tags: z.array(z.enum(["offense", "defense"])),
+        tags: z.array(z.string().trim().min(1)),
       }),
     )
     .mutation(async ({ ctx, input }) => {

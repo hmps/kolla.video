@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -16,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useTRPC } from "@/trpc/client";
 
 interface CommentSectionProps {
@@ -31,7 +31,9 @@ export const CommentSection = memo(function CommentSection({
 }: CommentSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [commentText, setCommentText] = useState("");
-  const [commentLevel, setCommentLevel] = useState<"all" | "coaches" | "private">("coaches");
+  const [commentLevel, setCommentLevel] = useState<
+    "all" | "coaches" | "private"
+  >("coaches");
   const [targetUserId, setTargetUserId] = useState<number | undefined>();
 
   const trpc = useTRPC();
