@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -39,7 +40,7 @@ export default function EventsPage({
   const { data: team } = useQuery(
     trpc.teams.get.queryOptions({ teamId: teamIdNum }),
   );
-  const { data: events } = useQuery(
+  const { data: events, isLoading } = useQuery(
     trpc.events.list.queryOptions({ teamId: teamIdNum }),
   );
 
@@ -55,7 +56,7 @@ export default function EventsPage({
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                <BreadcrumbLink href="/teams">Teams</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
@@ -75,7 +76,11 @@ export default function EventsPage({
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="container mx-auto max-w-6xl">
-          {events && events.length > 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Spinner className="size-8" />
+            </div>
+          ) : events && events.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>

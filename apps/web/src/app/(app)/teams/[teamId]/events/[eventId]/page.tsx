@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Spinner } from "@/components/ui/spinner";
 import { useTRPC } from "@/trpc/client";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
@@ -55,7 +56,7 @@ export default function EventDetailPage({
       eventId: eventIdNum,
     }),
   );
-  const { data: clips, refetch: refetchClips } = useQuery(
+  const { data: clips, refetch: refetchClips, isLoading } = useQuery(
     trpc.clips.byEvent.queryOptions({
       teamId: teamIdNum,
       eventId: eventIdNum,
@@ -151,13 +152,17 @@ export default function EventDetailPage({
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
+                <BreadcrumbLink href="/teams">Teams</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
                 <BreadcrumbLink href={`/teams/${teamId}/events`}>
-                  Events
+                  {team?.name || "Team"}
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{event?.title}</BreadcrumbPage>
+                <BreadcrumbPage>{event?.title || "Event"}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -175,57 +180,65 @@ export default function EventDetailPage({
         </div>
       </header>
       <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
-        {/* Video Player and Comments Row */}
-        <div className="flex gap-6">
-          {/* Large Player Section */}
-          <Card className="flex-1">
-            <CardContent className="p-0">
-              {typeof "window" !== "undefined" && selectedClip ? (
-                selectedClip.status === "ready" && selectedClip.hlsPrefix ? (
-                  <PlyrPlayer
-                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
-                    autoplay={autoplayKey > 0}
-                  />
-                ) : selectedClip.storageKey ? (
-                  <PlyrPlayer
-                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
-                    autoplay={autoplayKey > 0}
-                  />
-                ) : (
-                  <div className="aspect-video bg-muted flex items-center justify-center">
-                    <p className="text-muted-foreground">
-                      {selectedClip.status === "processing"
-                        ? "Processing..."
-                        : selectedClip.status === "failed"
-                          ? "Processing failed"
-                          : "Waiting for upload"}
-                    </p>
-                  </div>
-                )
-              ) : (
-                <div className="aspect-video bg-muted flex items-center justify-center">
-                  <p className="text-muted-foreground">Select a clip to play</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Spinner className="size-8" />
+          </div>
+        ) : (
+          <>
+            {/* Video Player and Comments Row */}
+            <div className="flex gap-6">
+              {/* Large Player Section */}
+              <Card className="flex-1">
+                <CardContent className="p-0">
+                  {typeof "window" !== "undefined" && selectedClip ? (
+                    selectedClip.status === "ready" && selectedClip.hlsPrefix ? (
+                      <PlyrPlayer
+                        src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
+                        autoplay={autoplayKey > 0}
+                      />
+                    ) : selectedClip.storageKey ? (
+                      <PlyrPlayer
+                        src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
+                        autoplay={autoplayKey > 0}
+                      />
+                    ) : (
+                      <div className="aspect-video bg-muted flex items-center justify-center">
+                        <p className="text-muted-foreground">
+                          {selectedClip.status === "processing"
+                            ? "Processing..."
+                            : selectedClip.status === "failed"
+                              ? "Processing failed"
+                              : "Waiting for upload"}
+                        </p>
+                      </div>
+                    )
+                  ) : (
+                    <div className="aspect-video bg-muted flex items-center justify-center">
+                      <p className="text-muted-foreground">Select a clip to play</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-          {/* Comments Section */}
-          <CommentSection
-            teamId={teamIdNum}
-            clipId={selectedClipId}
-            isCoach={team?.role === "coach"}
-          />
-        </div>
+              {/* Comments Section */}
+              <CommentSection
+                teamId={teamIdNum}
+                clipId={selectedClipId}
+                isCoach={team?.role === "coach"}
+              />
+            </div>
 
-        {/* Data Table Section */}
-        <DataTable
-          columns={columns}
-          data={clips ?? []}
-          onDeleteSelected={handleDeleteSelected}
-          onRowClick={handleRowClick}
-          selectedId={selectedClipId}
-        />
+            {/* Data Table Section */}
+            <DataTable
+              columns={columns}
+              data={clips ?? []}
+              onDeleteSelected={handleDeleteSelected}
+              onRowClick={handleRowClick}
+              selectedId={selectedClipId}
+            />
+          </>
+        )}
       </div>
 
       <AlertDialog

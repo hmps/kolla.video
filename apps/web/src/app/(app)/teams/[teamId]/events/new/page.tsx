@@ -1,9 +1,16 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-import Link from "next/link";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,6 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
 import { useTRPC } from "@/trpc/client";
 
@@ -39,6 +48,10 @@ export default function NewEventPage({
   const [notes, setNotes] = useState("");
 
   const trpc = useTRPC();
+  const { data: team } = useQuery(
+    trpc.teams.get.queryOptions({ teamId: teamIdNum }),
+  );
+
   const createEvent = useMutation(
     trpc.events.create.mutationOptions({
       onSuccess: (event) => {
@@ -61,82 +74,107 @@ export default function NewEventPage({
   };
 
   return (
-    <div className="container mx-auto p-8 max-w-2xl">
-      <Link
-        href={`/teams/${teamId}/events`}
-        className="text-sm text-muted-foreground mb-4 block"
-      >
-        ← Back to Events
-      </Link>
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/teams">Teams</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href={`/teams/${teamId}/events`}>
+                  {team?.name || "Team"}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>New Event</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </header>
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="container mx-auto max-w-2xl">
+          <Card>
+            <CardHeader>
+              <CardTitle>Create New Event</CardTitle>
+              <CardDescription>Add a game or practice event</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="type">Type</Label>
+                  <Select
+                    value={type}
+                    onValueChange={(v: "game" | "practice") => setType(v)}
+                  >
+                    <SelectTrigger id="type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="game">Game</SelectItem>
+                      <SelectItem value="practice">Practice</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Event</CardTitle>
-          <CardDescription>Add a game or practice event</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="type">Type</Label>
-              <Select
-                value={type}
-                onValueChange={(v: "game" | "practice") => setType(v)}
-              >
-                <SelectTrigger id="type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="game">Game</SelectItem>
-                  <SelectItem value="practice">Practice</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div>
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g., vs. Rivals FC"
+                    required
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., vs. Rivals FC"
-                required
-              />
-            </div>
+                <div>
+                  <Label htmlFor="date">Date</Label>
+                  <Input
+                    id="date"
+                    type="datetime-local"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="date">Date</Label>
-              <Input
-                id="date"
-                type="datetime-local"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
-            </div>
+                <div>
+                  <Label htmlFor="notes">Notes (optional)</Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Add any notes about this event"
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add any notes about this event"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button type="submit" disabled={createEvent.isPending}>
-                {createEvent.isPending ? "Creating..." : "Create Event"}
-              </Button>
-              <Link href={`/teams/${teamId}/events`}>
-                <Button type="button" variant="outline">
-                  Cancel
-                </Button>
-              </Link>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={createEvent.isPending}>
+                    {createEvent.isPending ? "Creating..." : "Create Event"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push(`/teams/${teamId}/events`)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </>
   );
 }

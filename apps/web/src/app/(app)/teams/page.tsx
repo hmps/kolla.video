@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -25,7 +26,7 @@ import { useTRPC } from "@/trpc/client";
 export default function TeamsPage() {
   const router = useRouter();
   const trpc = useTRPC();
-  const { data: teams } = useQuery(trpc.teams.list.queryOptions());
+  const { data: teams, isLoading } = useQuery(trpc.teams.list.queryOptions());
 
   return (
     <>
@@ -52,7 +53,11 @@ export default function TeamsPage() {
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="container mx-auto max-w-6xl">
-          {teams && teams.length > 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Spinner className="size-8" />
+            </div>
+          ) : teams && teams.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
