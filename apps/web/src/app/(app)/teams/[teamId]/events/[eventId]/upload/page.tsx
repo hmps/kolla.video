@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -171,18 +172,24 @@ export default function UploadPage({
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/teams">Teams</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href={`/teams/${teamId}/events`}>
-                  {team?.name || "Team"}
+                <BreadcrumbLink asChild>
+                  <Link href="/teams">Teams</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbLink href={`/teams/${teamId}/events/${eventId}`}>
-                  {event?.title || "Event"}
+                <BreadcrumbLink asChild>
+                  <Link href={`/teams/${teamId}/events`}>
+                    {team?.name || "Team"}
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href={`/teams/${teamId}/events/${eventId}`}>
+                    {event?.title || "Event"}
+                  </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />

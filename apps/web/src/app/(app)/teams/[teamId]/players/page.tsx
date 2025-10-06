@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { use, useState } from "react";
 import {
   Breadcrumb,
@@ -90,12 +91,16 @@ export default function PlayersPage({
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                <BreadcrumbLink asChild>
+                  <Link href="/teams">Teams</Link>
+                </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbLink href={`/teams/${teamId}/events`}>
-                  {team?.name || "Team"}
+                <BreadcrumbLink asChild>
+                  <Link href={`/teams/${teamId}/events`}>
+                    {team?.name || "Team"}
+                  </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />

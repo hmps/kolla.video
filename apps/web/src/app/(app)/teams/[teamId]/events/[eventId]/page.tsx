@@ -152,12 +152,16 @@ export default function EventDetailPage({
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/teams">Teams</BreadcrumbLink>
+                <BreadcrumbLink asChild>
+                  <Link href="/teams">Teams</Link>
+                </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbLink href={`/teams/${teamId}/events`}>
-                  {team?.name || "Team"}
+                <BreadcrumbLink asChild>
+                  <Link href={`/teams/${teamId}/events`}>
+                    {team?.name || "Team"}
+                  </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />

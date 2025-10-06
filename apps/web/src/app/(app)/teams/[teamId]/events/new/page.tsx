@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import {
@@ -85,12 +86,16 @@ export default function NewEventPage({
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/teams">Teams</BreadcrumbLink>
+                <BreadcrumbLink asChild>
+                  <Link href="/teams">Teams</Link>
+                </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbLink href={`/teams/${teamId}/events`}>
-                  {team?.name || "Team"}
+                <BreadcrumbLink asChild>
+                  <Link href={`/teams/${teamId}/events`}>
+                    {team?.name || "Team"}
+                  </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />

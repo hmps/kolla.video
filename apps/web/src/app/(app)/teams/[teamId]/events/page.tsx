@@ -56,7 +56,9 @@ export default function EventsPage({
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/teams">Teams</BreadcrumbLink>
+                <BreadcrumbLink asChild>
+                  <Link href="/teams">Teams</Link>
+                </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
