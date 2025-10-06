@@ -33,8 +33,10 @@ COPY apps/web ./apps/web
 COPY packages/db ./packages/db
 
 # Build the application
+# Create a temporary database directory for build (relative to apps/web)
+RUN mkdir -p /app/data && touch /app/data/app.sqlite
 WORKDIR /app/apps/web
-RUN pnpm build
+RUN pnpm exec next build
 
 # Stage 4: Production runtime
 FROM base AS runner
