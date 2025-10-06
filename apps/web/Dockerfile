@@ -98,10 +98,10 @@ RUN mkdir -p .next/cache/fetch-cache && chown -R 1001:1001 .next
 
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 3345
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=3345
 ENV HOSTNAME="0.0.0.0"
 
 # The standalone build puts server.js at apps/web/server.js
