@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ChevronRight, MessageSquare, Send } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,7 +16,7 @@ interface CommentSectionProps {
   isCoach: boolean;
 }
 
-export function CommentSection({
+export const CommentSection = memo(function CommentSection({
   teamId,
   clipId,
   isCoach,
@@ -143,4 +143,4 @@ export function CommentSection({
       </div>
     </Card>
   );
-}
+});

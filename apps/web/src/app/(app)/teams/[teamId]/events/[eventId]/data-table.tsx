@@ -8,7 +8,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Trash2 } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -27,7 +27,7 @@ interface DataTableProps<TData, TValue> {
   selectedId?: number | null;
 }
 
-export function DataTable<TData extends { id: number }, TValue>({
+function DataTableInner<TData extends { id: number }, TValue>({
   columns,
   data,
   onDeleteSelected,
@@ -136,3 +136,5 @@ export function DataTable<TData extends { id: number }, TValue>({
     </div>
   );
 }
+
+export const DataTable = memo(DataTableInner) as typeof DataTableInner;

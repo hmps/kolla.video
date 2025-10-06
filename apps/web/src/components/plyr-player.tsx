@@ -1,7 +1,7 @@
 "use client";
 
 import Hls from "hls.js";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 interface PlyrPlayerProps {
   src: string;
@@ -15,7 +15,7 @@ interface PlyrPlayerProps {
  *
  * Plyr Player is an instance of https://github.com/sampotts/plyr
  */
-export function PlyrPlayer({
+export const PlyrPlayer = memo(function PlyrPlayer({
   src,
   poster,
   onTimeUpdate,
@@ -150,5 +150,5 @@ export function PlyrPlayer({
     }
   }, [initialized, src, poster, autoplay]);
 
-  return <div ref={containerRef} />;
-}
+  return <div className="aspect-video" ref={containerRef} />;
+});

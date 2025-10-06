@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { CommentSection } from "@/components/comment-section";
 import { PlyrPlayer } from "@/components/plyr-player";
 import {
@@ -79,14 +79,17 @@ export default function EventDetailPage({
     }),
   );
 
-  const selectedClip = clips?.find((clip) => clip.id === selectedClipId);
+  const selectedClip = useMemo(
+    () => clips?.find((clip) => clip.id === selectedClipId),
+    [clips, selectedClipId]
+  );
 
-  const handleDeleteSelected = (selectedIds: number[]) => {
+  const handleDeleteSelected = useCallback((selectedIds: number[]) => {
     if (selectedIds.length === 0) return;
     setClipsToDelete(selectedIds);
-  };
+  }, []);
 
-  const confirmDelete = () => {
+  const confirmDelete = useCallback(() => {
     // Delete clips one by one
     clipsToDelete.forEach((clipId) => {
       deleteClips.mutate({
@@ -94,12 +97,12 @@ export default function EventDetailPage({
         clipId,
       });
     });
-  };
+  }, [clipsToDelete, deleteClips, teamIdNum]);
 
-  const handleRowClick = (clip: { id: number }) => {
+  const handleRowClick = useCallback((clip: { id: number }) => {
     setSelectedClipId(clip.id);
     setAutoplayKey((prev) => prev + 1);
-  };
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
