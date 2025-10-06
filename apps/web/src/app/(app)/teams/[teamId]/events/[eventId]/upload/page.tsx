@@ -190,9 +190,7 @@ export default function UploadPage({
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href={`/teams/${teamId}/events`}>
-                    {team?.name || "Team"}
-                  </Link>
+                  <Link href={`/teams/${teamId}`}>{team?.name || "Team"}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
