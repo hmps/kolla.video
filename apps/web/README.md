@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kolla Web App
+
+Next.js application for video upload and distribution.
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install Dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Set Up Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env.local` file with:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Clerk Authentication
+CLERK_PUBLISHABLE_KEY=pk_...
+CLERK_SECRET_KEY=sk_...
+CLERK_WEBHOOK_SECRET=whsec_...
 
-## Learn More
+# Database
+DATABASE_URL=file:../../packages/db/local.db
 
-To learn more about Next.js, take a look at the following resources:
+# App URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Set Up Clerk Webhooks (Local Development)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Install svix CLI:
 
-## Deploy on Vercel
+```bash
+brew install svix/svix/svix
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Start the svix listener (in a separate terminal):
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+svix listen http://localhost:3000/api/webhooks/clerk
+```
+
+This will output a URL like `https://play.svix.com/in/...`
+
+Configure the webhook in Clerk Dashboard:
+1. Go to [Clerk Dashboard](https://dashboard.clerk.com) → Webhooks
+2. Click "Add Endpoint"
+3. Paste the svix URL from above
+4. Subscribe to events: `user.created`, `user.updated`, `user.deleted`
+5. Copy the webhook signing secret
+6. Add to `.env.local` as `CLERK_WEBHOOK_SECRET`
+
+### 4. Run Development Server
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser.
+
+## Webhooks
+
+User data syncs automatically via Clerk webhooks:
+- `user.created` → Creates user in database
+- `user.updated` → Updates user in database
+- `user.deleted` → Deletes user from database
+
+The webhook endpoint is at `/api/webhooks/clerk` and handles verification using svix.

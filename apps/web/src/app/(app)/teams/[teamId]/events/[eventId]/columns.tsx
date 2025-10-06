@@ -13,6 +13,8 @@ export type Clip = {
 export const columns: ColumnDef<Clip>[] = [
   {
     id: "select",
+    size: 20,
+    maxSize: 20,
     header: ({ table }) => (
       <Checkbox
         checked={
@@ -39,26 +41,6 @@ export const columns: ColumnDef<Clip>[] = [
     cell: ({ row }) => {
       const index = row.index;
       return <div className="font-medium">Clip #{index + 1}</div>;
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as string;
-      return (
-        <Badge
-          variant={
-            status === "ready"
-              ? "default"
-              : status === "failed"
-                ? "destructive"
-                : "secondary"
-          }
-        >
-          {status}
-        </Badge>
-      );
     },
   },
   {

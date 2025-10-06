@@ -65,6 +65,7 @@ export const clips = sqliteTable("clips", {
   uploaderId: integer("uploader_id")
     .notNull()
     .references(() => users.id),
+  name: text("name"),
   storageKey: text("storage_key").notNull(),
   hlsPrefix: text("hls_prefix"),
   durationS: real("duration_s"),
