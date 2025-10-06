@@ -25,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { EventsTable } from "@/components/events-table";
 import { useTRPC } from "@/trpc/client";
 
 export default function Page() {
@@ -32,9 +33,12 @@ export default function Page() {
   const { data: teams, isLoading: teamsLoading } = useQuery(
     trpc.dashboard.myTeams.queryOptions(),
   );
-  const { data: recentEvents, isLoading: eventsLoading } = useQuery(
-    trpc.dashboard.recentEvents.queryOptions(),
+  const { data: events, isLoading: eventsLoading } = useQuery(
+    trpc.events.listAll.queryOptions(),
   );
+
+  // Get the 10 most recent events
+  const recentEvents = events?.slice(0, 10);
 
   return (
     <>
@@ -104,44 +108,16 @@ export default function Page() {
             <CardHeader>
               <CardTitle>Recent Events</CardTitle>
               <CardDescription>
-                Latest 5 events across all teams
+                Latest 10 events across all teams
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {eventsLoading ? (
-                <div className="text-muted-foreground text-sm">Loading...</div>
-              ) : recentEvents && recentEvents.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Event</TableHead>
-                      <TableHead>Team</TableHead>
-                      <TableHead className="text-right">Clips</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentEvents.map((event) => (
-                      <TableRow key={event.id}>
-                        <TableCell>
-                          <Link
-                            href={`/teams/${event.teamId}/events/${event.id}`}
-                            className="hover:underline"
-                          >
-                            {event.title}
-                          </Link>
-                        </TableCell>
-                        <TableCell>{event.teamName}</TableCell>
-                        <TableCell className="text-right">
-                          {event.clipCount}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
+              {!eventsLoading && (!recentEvents || recentEvents.length === 0) ? (
                 <div className="text-muted-foreground text-sm">
                   No events yet
                 </div>
+              ) : (
+                <EventsTable events={recentEvents} isLoading={eventsLoading} />
               )}
             </CardContent>
           </Card>

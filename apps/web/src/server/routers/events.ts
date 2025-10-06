@@ -1,5 +1,5 @@
-import { db, events, teamMemberships } from "@kolla/db";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { db, events, teamMemberships, clips } from "@kolla/db";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure, router, teamProcedure } from "../trpc";
 
@@ -16,14 +16,24 @@ export const eventsRouter = router({
       return [];
     }
 
-    // Get all events from those teams
-    const allEvents = await db.query.events.findMany({
-      where: inArray(events.teamId, teamIds),
-      orderBy: [desc(events.date)],
-      with: {
-        team: true,
-      },
-    });
+    // Get all events from those teams with clip counts
+    const allEvents = await db
+      .select({
+        id: events.id,
+        teamId: events.teamId,
+        type: events.type,
+        title: events.title,
+        date: events.date,
+        venue: events.venue,
+        notes: events.notes,
+        createdAt: events.createdAt,
+        clipCount: sql<number>`count(${clips.id})`.as("clip_count"),
+      })
+      .from(events)
+      .leftJoin(clips, eq(clips.eventId, events.id))
+      .where(inArray(events.teamId, teamIds))
+      .groupBy(events.id)
+      .orderBy(desc(events.date));
 
     return allEvents;
   }),

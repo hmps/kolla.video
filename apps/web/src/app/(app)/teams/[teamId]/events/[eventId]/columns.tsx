@@ -18,7 +18,7 @@ export type Clip = {
   tags?: Array<{ id: number; tag: string }>;
 };
 
-function EditableNameCell({ clip, index }: { clip: Clip; index: number }) {
+function EditableNameCell({ clip, index, isCoach }: { clip: Clip; index: number; isCoach: boolean }) {
   const params = useParams<{ teamId: string; eventId: string }>();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(clip.name ?? "");
@@ -88,6 +88,14 @@ function EditableNameCell({ clip, index }: { clip: Clip; index: number }) {
 
   const displayName = optimisticName ?? clip.name ?? `Clip #${index + 1}`;
 
+  if (!isCoach) {
+    return (
+      <span className="font-medium px-2 -mx-2 py-1 text-left inline-block">
+        {displayName}
+      </span>
+    );
+  }
+
   return (
     <button
       type="button"
@@ -102,7 +110,7 @@ function EditableNameCell({ clip, index }: { clip: Clip; index: number }) {
   );
 }
 
-function EditableTagsCell({ clip }: { clip: Clip }) {
+function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
   const params = useParams<{ teamId: string; eventId: string }>();
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -235,6 +243,22 @@ function EditableTagsCell({ clip }: { clip: Clip }) {
     );
   }
 
+  if (!isCoach) {
+    return (
+      <div className="flex gap-1 px-2 -mx-2 py-1">
+        {currentTags.length > 0 ? (
+          currentTags.map((tag) => (
+            <Badge key={tag.id} variant="outline" className="h-6 text-xs">
+              {tag.tag}
+            </Badge>
+          ))
+        ) : (
+          <span className="text-muted-foreground text-sm">—</span>
+        )}
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
@@ -259,7 +283,7 @@ function EditableTagsCell({ clip }: { clip: Clip }) {
   );
 }
 
-export const columns: ColumnDef<Clip>[] = [
+export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
   {
     id: "select",
     size: 40,
@@ -309,7 +333,7 @@ export const columns: ColumnDef<Clip>[] = [
     cell: ({ row }) => {
       const clip = row.original;
       const index = row.index;
-      return <EditableNameCell clip={clip} index={index} />;
+      return <EditableNameCell clip={clip} index={index} isCoach={isCoach} />;
     },
   },
   {
@@ -317,7 +341,7 @@ export const columns: ColumnDef<Clip>[] = [
     header: "Tags",
     cell: ({ row }) => {
       const clip = row.original;
-      return <EditableTagsCell clip={clip} />;
+      return <EditableTagsCell clip={clip} isCoach={isCoach} />;
     },
   },
 ];

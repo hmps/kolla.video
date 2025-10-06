@@ -23,6 +23,7 @@ interface EventsTableProps {
         venue: string | null;
         notes: string | null;
         teamId: number;
+        clipCount?: number;
       }[]
     | undefined;
   isLoading: boolean;
@@ -49,6 +50,7 @@ export function EventsTable({
               <TableHead>Type</TableHead>
               <TableHead>Venue</TableHead>
               <TableHead>Notes</TableHead>
+              <TableHead className="text-right">Clips</TableHead>
               {showEditButton && <TableHead className="w-[50px]"></TableHead>}
             </TableRow>
           </TableHeader>
@@ -71,6 +73,9 @@ export function EventsTable({
                 <TableCell>
                   <Skeleton className="h-5 w-40" />
                 </TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="h-5 w-8" />
+                </TableCell>
                 {showEditButton && (
                   <TableCell>
                     <Skeleton className="h-8 w-8" />
@@ -89,45 +94,86 @@ export function EventsTable({
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Event</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Venue</TableHead>
-            <TableHead>Notes</TableHead>
-            {showEditButton && <TableHead className="w-[50px]"></TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {events.map((event) => (
-            <TableRow
-              key={event.id}
-              className="cursor-pointer"
-              onClick={() =>
-                router.push(`/teams/${event.teamId}/events/${event.id}`)
-              }
-            >
-              <TableCell className="font-medium">{event.title}</TableCell>
-              <TableCell>{format(new Date(event.date), "PPP")}</TableCell>
-              <TableCell className="capitalize">{event.type}</TableCell>
-              <TableCell className="text-muted-foreground">
-                {event.venue || "-"}
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {event.notes || "-"}
-              </TableCell>
-              {showEditButton && teamId && (
-                <TableCell>
-                  <EditEventDialog event={event} teamId={teamId} />
-                </TableCell>
-              )}
+    <>
+      {/* Mobile view - card-based layout */}
+      <div className="md:hidden space-y-3">
+        {events.map((event) => (
+          <div
+            key={event.id}
+            className="rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors"
+            onClick={() =>
+              router.push(`/teams/${event.teamId}/events/${event.id}`)
+            }
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex-1">
+                <h3 className="font-medium">{event.title}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {format(new Date(event.date), "PPP")}
+                </p>
+              </div>
+              <div className="text-sm font-medium ml-2">
+                {event.clipCount ?? 0} clips
+              </div>
+            </div>
+            <div className="flex gap-4 text-sm text-muted-foreground">
+              <span className="capitalize">{event.type}</span>
+              {event.venue && <span>• {event.venue}</span>}
+            </div>
+            {showEditButton && teamId && (
+              <div className="mt-3 pt-3 border-t">
+                <EditEventDialog event={event} teamId={teamId} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop view - table layout */}
+      <div className="hidden md:block rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Event</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Venue</TableHead>
+              <TableHead>Notes</TableHead>
+              <TableHead className="text-right">Clips</TableHead>
+              {showEditButton && <TableHead className="w-[50px]"></TableHead>}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {events.map((event) => (
+              <TableRow
+                key={event.id}
+                className="cursor-pointer"
+                onClick={() =>
+                  router.push(`/teams/${event.teamId}/events/${event.id}`)
+                }
+              >
+                <TableCell className="font-medium">{event.title}</TableCell>
+                <TableCell>{format(new Date(event.date), "PPP")}</TableCell>
+                <TableCell className="capitalize">{event.type}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {event.venue || "-"}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {event.notes || "-"}
+                </TableCell>
+                <TableCell className="text-right">
+                  {event.clipCount ?? 0}
+                </TableCell>
+                {showEditButton && teamId && (
+                  <TableCell>
+                    <EditEventDialog event={event} teamId={teamId} />
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }

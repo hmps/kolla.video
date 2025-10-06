@@ -38,7 +38,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
 import { useTRPC } from "@/trpc/client";
-import { columns } from "./columns";
+import { getColumns } from "./columns";
 import { DataTable } from "./data-table";
 
 export default function EventDetailPage({
@@ -436,7 +436,7 @@ export default function EventDetailPage({
 
             {/* Data Table Section */}
             <DataTable
-              columns={columns}
+              columns={getColumns(team?.role === "coach")}
               data={clips ?? []}
               onDeleteSelected={handleDeleteSelected}
               onRowClick={handleRowClick}
