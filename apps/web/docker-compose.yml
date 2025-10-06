@@ -7,7 +7,7 @@ services:
       - "${PORT:-3345}:3345"
     environment:
       # Database
-      - DATABASE_URL=file:/data/app.sqlite
+      - DATABASE_URL=${DATABASE_URL}
 
       # App URL
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
