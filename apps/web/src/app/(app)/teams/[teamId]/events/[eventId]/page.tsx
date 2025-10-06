@@ -2,10 +2,18 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import {
+  ChevronDown,
+  ChevronUp,
+  Pause,
+  Play,
+  RotateCcw,
+  RotateCw,
+} from "lucide-react";
 import Link from "next/link";
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CommentSection } from "@/components/comment-section";
-import { PlyrPlayer } from "@/components/plyr-player";
+import { PlyrPlayer, type PlyrPlayerRef } from "@/components/plyr-player";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +53,8 @@ export default function EventDetailPage({
   const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
   const [clipsToDelete, setClipsToDelete] = useState<number[]>([]);
   const [autoplayKey, setAutoplayKey] = useState(0);
+  const mobilePlayerRef = useRef<PlyrPlayerRef>(null);
+  const desktopPlayerRef = useRef<PlyrPlayerRef>(null);
 
   const trpc = useTRPC();
   const { data: team } = useQuery(
@@ -108,6 +118,45 @@ export default function EventDetailPage({
     setAutoplayKey((prev) => prev + 1);
   }, []);
 
+  const goToPreviousClip = useCallback(() => {
+    if (!clips || clips.length === 0) return;
+    const currentIndex = clips.findIndex((clip) => clip.id === selectedClipId);
+    if (currentIndex > 0) {
+      setSelectedClipId(clips[currentIndex - 1].id);
+      setAutoplayKey((prev) => prev + 1);
+    }
+  }, [clips, selectedClipId]);
+
+  const goToNextClip = useCallback(() => {
+    if (!clips || clips.length === 0) return;
+    const currentIndex = clips.findIndex((clip) => clip.id === selectedClipId);
+    if (currentIndex < clips.length - 1) {
+      setSelectedClipId(clips[currentIndex + 1].id);
+      setAutoplayKey((prev) => prev + 1);
+    }
+  }, [clips, selectedClipId]);
+
+  const seekBackward = useCallback(() => {
+    const player =
+      mobilePlayerRef.current?.player || desktopPlayerRef.current?.player;
+    if (player) {
+      const newTime = Math.max(0, player.currentTime - 1);
+      player.currentTime = newTime;
+    }
+  }, []);
+
+  const seekForward = useCallback(() => {
+    const player =
+      mobilePlayerRef.current?.player || desktopPlayerRef.current?.player;
+    if (player) {
+      const newTime = Math.min(
+        player.duration || player.currentTime + 1,
+        player.currentTime + 1,
+      );
+      player.currentTime = newTime;
+    }
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input/textarea
@@ -156,7 +205,12 @@ export default function EventDetailPage({
             orientation="vertical"
             className="mr-2 data-[orientation=vertical]:h-4"
           />
-          <Breadcrumb>
+          {/* Mobile: Show only event name */}
+          <div className="md:hidden">
+            <p className="font-medium">{event?.title || "Event"}</p>
+          </div>
+          {/* Desktop: Show full breadcrumb */}
+          <Breadcrumb className="hidden md:block">
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
@@ -178,7 +232,7 @@ export default function EventDetailPage({
             </BreadcrumbList>
           </Breadcrumb>
         </div>
-        <div className="ml-auto flex items-center gap-2 px-4">
+        <div className="ml-auto items-center gap-2 px-4 hidden md:flex">
           {event && (
             <p className="text-sm text-muted-foreground mr-4">
               {format(new Date(event.date), "PPP")} •{" "}
@@ -190,6 +244,91 @@ export default function EventDetailPage({
           </Link>
         </div>
       </header>
+
+      {/* Video Player Section - Full width on mobile, fixed at top */}
+      {!isLoading && (
+        <div className="sticky top-0 z-10 bg-background md:hidden">
+          <Card className="rounded-none border-x-0">
+            <CardContent className="p-0">
+              {typeof "window" !== "undefined" && selectedClip ? (
+                selectedClip.status === "ready" && selectedClip.hlsPrefix ? (
+                  <PlyrPlayer
+                    ref={mobilePlayerRef}
+                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
+                    autoplay={autoplayKey > 0}
+                  />
+                ) : selectedClip.storageKey ? (
+                  <PlyrPlayer
+                    ref={mobilePlayerRef}
+                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
+                    autoplay={autoplayKey > 0}
+                  />
+                ) : (
+                  <div className="aspect-video bg-muted flex items-center justify-center">
+                    <p className="text-muted-foreground">
+                      {selectedClip.status === "processing"
+                        ? "Processing..."
+                        : selectedClip.status === "failed"
+                          ? "Processing failed"
+                          : "Waiting for upload"}
+                    </p>
+                  </div>
+                )
+              ) : (
+                <div className="aspect-video bg-muted flex items-center justify-center">
+                  <p className="text-muted-foreground">Select a clip to play</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Mobile Controls */}
+          <div className="flex items-center justify-center gap-4 py-4 bg-background">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToPreviousClip}
+              disabled={
+                !clips ||
+                clips.length === 0 ||
+                clips.findIndex((clip) => clip.id === selectedClipId) === 0
+              }
+            >
+              <ChevronUp className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={seekBackward}
+              disabled={!selectedClip}
+            >
+              <RotateCcw className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={seekForward}
+              disabled={!selectedClip}
+            >
+              <RotateCw className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToNextClip}
+              disabled={
+                !clips ||
+                clips.length === 0 ||
+                clips.findIndex((clip) => clip.id === selectedClipId) ===
+                  clips.length - 1
+              }
+            >
+              <ChevronDown className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -197,45 +336,58 @@ export default function EventDetailPage({
           </div>
         ) : (
           <>
-            {/* Video Player and Comments Row */}
-            <div className="flex gap-6">
+            {/* Desktop Video Player and Comments Row */}
+            <div className="hidden md:flex md:gap-6">
               {/* Large Player Section */}
-              <Card className="flex-1">
-                <CardContent className="p-0">
-                  {typeof "window" !== "undefined" && selectedClip ? (
-                    selectedClip.status === "ready" &&
-                    selectedClip.hlsPrefix ? (
-                      <PlyrPlayer
-                        src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
-                        autoplay={autoplayKey > 0}
-                      />
-                    ) : selectedClip.storageKey ? (
-                      <PlyrPlayer
-                        src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
-                        autoplay={autoplayKey > 0}
-                      />
+              <div className="md:flex-1">
+                <Card className="flex-1">
+                  <CardContent className="p-0">
+                    {typeof "window" !== "undefined" && selectedClip ? (
+                      selectedClip.status === "ready" &&
+                      selectedClip.hlsPrefix ? (
+                        <PlyrPlayer
+                          ref={desktopPlayerRef}
+                          src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
+                          autoplay={autoplayKey > 0}
+                        />
+                      ) : selectedClip.storageKey ? (
+                        <PlyrPlayer
+                          ref={desktopPlayerRef}
+                          src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
+                          autoplay={autoplayKey > 0}
+                        />
+                      ) : (
+                        <div className="aspect-video bg-muted flex items-center justify-center">
+                          <p className="text-muted-foreground">
+                            {selectedClip.status === "processing"
+                              ? "Processing..."
+                              : selectedClip.status === "failed"
+                                ? "Processing failed"
+                                : "Waiting for upload"}
+                          </p>
+                        </div>
+                      )
                     ) : (
                       <div className="aspect-video bg-muted flex items-center justify-center">
                         <p className="text-muted-foreground">
-                          {selectedClip.status === "processing"
-                            ? "Processing..."
-                            : selectedClip.status === "failed"
-                              ? "Processing failed"
-                              : "Waiting for upload"}
+                          Select a clip to play
                         </p>
                       </div>
-                    )
-                  ) : (
-                    <div className="aspect-video bg-muted flex items-center justify-center">
-                      <p className="text-muted-foreground">
-                        Select a clip to play
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* Comments Section */}
+              <CommentSection
+                teamId={teamIdNum}
+                clipId={selectedClipId}
+                isCoach={team?.role === "coach"}
+              />
+            </div>
+
+            {/* Mobile Comments Section */}
+            <div className="md:hidden">
               <CommentSection
                 teamId={teamIdNum}
                 clipId={selectedClipId}

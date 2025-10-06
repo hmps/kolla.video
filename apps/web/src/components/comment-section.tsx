@@ -90,22 +90,26 @@ export const CommentSection = memo(function CommentSection({
     return null;
   }
 
+  const visibleCommentCount = comments?.length ?? 0;
+
   if (!isOpen) {
     return (
       <Button
         variant="outline"
-        size="icon"
         onClick={() => setIsOpen(true)}
-        className="shrink-0"
+        className="shrink-0 gap-2"
       >
         <MessageSquare className="h-4 w-4" />
+        {visibleCommentCount > 0 && (
+          <span className="text-xs font-medium">{visibleCommentCount}</span>
+        )}
         <span className="sr-only">Show Comments</span>
       </Button>
     );
   }
 
   return (
-    <Card className="w-80 shrink-0 overflow-hidden">
+    <Card className="w-full md:w-80 shrink-0 overflow-hidden">
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h3 className="font-semibold">Comments</h3>
