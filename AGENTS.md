@@ -19,14 +19,13 @@ kolla/
 ├── docs/
 │   └── plan.md           # Full implementation plan
 ├── pnpm-workspace.yaml   # pnpm workspace config
-└── package.json          # Root package with dotenvx
+└── package.json
 ```
 
 ## Key Technologies
 
 - **Package Manager**: pnpm v10.17
 - **Monorepo**: pnpm workspaces
-- **Environment**: dotenvx for env management
 - **Database**: SQLite with WAL mode
 - **Auth**: Clerk
 - **API**: tRPC v11
@@ -37,11 +36,6 @@ kolla/
 
 ## Environment Variables
 
-Root-level dotenvx dependency allows running commands with env files:
-
-```bash
-dotenvx run -- <command>
-```
 
 Common variables across services:
 - `DATABASE_URL` - SQLite database path

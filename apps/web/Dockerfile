@@ -38,6 +38,10 @@ RUN mkdir -p /app/data && touch /app/data/app.sqlite
 WORKDIR /app/apps/web
 RUN pnpm exec next build
 
+# Run database migrations to create schema files
+WORKDIR /app/packages/db
+RUN pnpm db:migrate
+
 # Stage 4: Production runtime
 FROM base AS runner
 WORKDIR /app
@@ -57,10 +61,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/
 # Copy database package for migrations
 COPY --from=builder --chown=nextjs:nodejs /app/packages/db ./packages/db
 
-# Copy entrypoint script
-COPY --from=builder /app/apps/web/docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
-
 # Create data directory for SQLite
 RUN mkdir -p /data && chown nextjs:nodejs /data
 
@@ -72,4 +72,4 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD ["pnpm", "start"]

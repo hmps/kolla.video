@@ -11,7 +11,6 @@ Next.js 15 application for Kolla video platform with dark mode UI, Clerk auth, a
 - **Auth**: Clerk v6.33
 - **API**: tRPC v11.6 with TanStack Query
 - **Validation**: Zod v4.1
-- **Env Management**: dotenvx (wraps all npm scripts)
 - **Linting**: Biome v2.2
 
 ## Project Structure
@@ -99,15 +98,6 @@ Middleware at `middleware.ts` protects routes.
 
 ## Environment Variables
 
-Scripts use dotenvx:
-
-```json
-{
-  "dev": "dotenvx run -- next dev --turbopack",
-  "build": "dotenvx run -- next build --turbopack",
-  "start": "dotenvx run -- next start"
-}
-```
 
 Required variables in `.env.local`:
 - `CLERK_PUBLISHABLE_KEY`

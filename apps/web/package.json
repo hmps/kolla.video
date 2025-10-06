@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "dotenvx run -- next dev --turbopack",
-    "build": "dotenvx run -- next build --turbopack",
-    "start": "dotenvx run -- next start",
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
     "lint": "biome check",
     "format": "biome check --write --unsafe",
     "typecheck": "tsc --noEmit"
