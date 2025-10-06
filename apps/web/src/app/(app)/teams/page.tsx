@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -54,8 +54,31 @@ export default function TeamsPage() {
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="container mx-auto max-w-6xl">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Spinner className="size-8" />
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Team Name</TableHead>
+                    <TableHead>Members</TableHead>
+                    <TableHead>My Role</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-5 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-20" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ) : teams && teams.length > 0 ? (
             <div className="rounded-md border">
@@ -72,7 +95,7 @@ export default function TeamsPage() {
                     <TableRow
                       key={team.id}
                       className="cursor-pointer"
-                      onClick={() => router.push(`/teams/${team.id}/events`)}
+                      onClick={() => router.push(`/teams/${team.id}`)}
                     >
                       <TableCell className="font-medium">{team.name}</TableCell>
                       <TableCell>{team.memberCount}</TableCell>

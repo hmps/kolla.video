@@ -133,4 +133,145 @@ export const teamsRouter = router({
 
       return newMembership;
     }),
+
+  availableUsers: protectedProcedure
+    .input(z.object({ teamId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      // Check if user is a member of this team
+      const membership = await db.query.teamMemberships.findFirst({
+        where: (memberships, { and, eq }) =>
+          and(
+            eq(memberships.teamId, input.teamId),
+            eq(memberships.userId, ctx.user.id),
+          ),
+      });
+
+      if (!membership) {
+        throw new Error("Not a member of this team");
+      }
+
+      // Get all team member user IDs
+      const teamMembers = await db.query.teamMemberships.findMany({
+        where: eq(teamMemberships.teamId, input.teamId),
+        columns: { userId: true },
+      });
+
+      const memberUserIds = teamMembers.map((m) => m.userId);
+
+      // Get all users not in the team
+      const allUsers = await db.query.users.findMany();
+      const availableUsers = allUsers.filter(
+        (user) => !memberUserIds.includes(user.id),
+      );
+
+      return availableUsers;
+    }),
+
+  members: protectedProcedure
+    .input(z.object({ teamId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      // Check if user is a member of this team
+      const membership = await db.query.teamMemberships.findFirst({
+        where: (memberships, { and, eq }) =>
+          and(
+            eq(memberships.teamId, input.teamId),
+            eq(memberships.userId, ctx.user.id),
+          ),
+      });
+
+      if (!membership) {
+        throw new Error("Not a member of this team");
+      }
+
+      // Get all team members with user details
+      const members = await db.query.teamMemberships.findMany({
+        where: eq(teamMemberships.teamId, input.teamId),
+        with: {
+          user: true,
+        },
+      });
+
+      return members.map((m) => ({
+        id: m.id,
+        userId: m.user.id,
+        name: `${m.user.firstName || ""} ${m.user.lastName || ""}`.trim() || m.user.email,
+        email: m.user.email,
+        role: m.role,
+      }));
+    }),
+
+  addMembers: protectedProcedure
+    .input(
+      z.object({
+        teamId: z.number(),
+        userIds: z.array(z.number()),
+        role: z.enum(["coach", "player"]).default("player"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if current user is a coach
+      const membership = await db.query.teamMemberships.findFirst({
+        where: (memberships, { and, eq }) =>
+          and(
+            eq(memberships.teamId, input.teamId),
+            eq(memberships.userId, ctx.user.id),
+          ),
+      });
+
+      if (!membership || membership.role !== "coach") {
+        throw new Error("Only coaches can add members");
+      }
+
+      // Add all users to the team
+      const newMemberships = await db
+        .insert(teamMemberships)
+        .values(
+          input.userIds.map((userId) => ({
+            teamId: input.teamId,
+            userId,
+            role: input.role,
+          })),
+        )
+        .returning();
+
+      return newMemberships;
+    }),
+
+  removeMembers: protectedProcedure
+    .input(
+      z.object({
+        teamId: z.number(),
+        membershipIds: z.array(z.number()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if current user is a coach
+      const membership = await db.query.teamMemberships.findFirst({
+        where: (memberships, { and, eq }) =>
+          and(
+            eq(memberships.teamId, input.teamId),
+            eq(memberships.userId, ctx.user.id),
+          ),
+      });
+
+      if (!membership || membership.role !== "coach") {
+        throw new Error("Only coaches can remove members");
+      }
+
+      // Remove memberships
+      await db
+        .delete(teamMemberships)
+        .where(
+          eq(teamMemberships.id, input.membershipIds[0]),
+        );
+
+      // If there are multiple IDs, delete them individually
+      for (let i = 1; i < input.membershipIds.length; i++) {
+        await db
+          .delete(teamMemberships)
+          .where(eq(teamMemberships.id, input.membershipIds[i]));
+      }
+
+      return { success: true };
+    }),
 });
