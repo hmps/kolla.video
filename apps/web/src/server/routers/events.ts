@@ -1,9 +1,33 @@
-import { db, events } from "db";
-import { and, desc, eq } from "drizzle-orm";
+import { db, events, teamMemberships } from "db";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { router, teamProcedure } from "../trpc";
+import { protectedProcedure, router, teamProcedure } from "../trpc";
 
 export const eventsRouter = router({
+  listAll: protectedProcedure.query(async ({ ctx }) => {
+    // Get all teams the user is a member of
+    const memberships = await db.query.teamMemberships.findMany({
+      where: eq(teamMemberships.userId, ctx.user.id),
+    });
+
+    const teamIds = memberships.map((m) => m.teamId);
+
+    if (teamIds.length === 0) {
+      return [];
+    }
+
+    // Get all events from those teams
+    const allEvents = await db.query.events.findMany({
+      where: inArray(events.teamId, teamIds),
+      orderBy: [desc(events.date)],
+      with: {
+        team: true,
+      },
+    });
+
+    return allEvents;
+  }),
+
   list: teamProcedure
     .input(z.object({ teamId: z.number() }))
     .query(async ({ input }) => {

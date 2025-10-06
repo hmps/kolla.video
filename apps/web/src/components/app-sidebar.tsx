@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { Home, Users, Video } from "lucide-react";
+import { Calendar, Home, Users, Video } from "lucide-react";
 import type * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
@@ -26,19 +26,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: Home,
     },
     {
+      title: "Events",
+      url: "/events",
+      icon: Calendar,
+    },
+    {
       title: "Teams",
       url: "/teams",
       icon: Users,
-      items: [
-        {
-          title: "All Teams",
-          url: "/teams",
-        },
-        {
-          title: "Create Team",
-          url: "/teams/new",
-        },
-      ],
     },
   ];
 
