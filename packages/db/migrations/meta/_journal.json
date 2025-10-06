@@ -29,6 +29,13 @@
       "when": 1759733749585,
       "tag": "0003_early_frightful_four",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1759737757948,
+      "tag": "0004_happy_scarecrow",
+      "breakpoints": true
     }
   ]
 }

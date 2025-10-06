@@ -229,6 +229,38 @@ export const clipsRouter = router({
       return { success: true };
     }),
 
+  updateName: teamProcedure
+    .input(
+      z.object({
+        teamId: z.number(),
+        clipId: z.number(),
+        name: z.string().trim().min(1).max(255),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify user is a coach
+      if (ctx.membership.role !== "coach") {
+        throw new Error("Only coaches can update clip names");
+      }
+
+      // Verify clip belongs to team
+      const clip = await db.query.clips.findFirst({
+        where: and(eq(clips.id, input.clipId), eq(clips.teamId, input.teamId)),
+      });
+
+      if (!clip) {
+        throw new Error("Clip not found");
+      }
+
+      // Update the clip name
+      await db
+        .update(clips)
+        .set({ name: input.name })
+        .where(eq(clips.id, input.clipId));
+
+      return { success: true };
+    }),
+
   delete: teamProcedure
     .input(z.object({ teamId: z.number(), clipId: z.number() }))
     .mutation(async ({ ctx, input }) => {
