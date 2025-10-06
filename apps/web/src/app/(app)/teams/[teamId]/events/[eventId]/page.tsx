@@ -56,7 +56,11 @@ export default function EventDetailPage({
       eventId: eventIdNum,
     }),
   );
-  const { data: clips, refetch: refetchClips, isLoading } = useQuery(
+  const {
+    data: clips,
+    refetch: refetchClips,
+    isLoading,
+  } = useQuery(
     trpc.clips.byEvent.queryOptions({
       teamId: teamIdNum,
       eventId: eventIdNum,
@@ -81,7 +85,7 @@ export default function EventDetailPage({
 
   const selectedClip = useMemo(
     () => clips?.find((clip) => clip.id === selectedClipId),
-    [clips, selectedClipId]
+    [clips, selectedClipId],
   );
 
   const handleDeleteSelected = useCallback((selectedIds: number[]) => {
@@ -199,7 +203,8 @@ export default function EventDetailPage({
               <Card className="flex-1">
                 <CardContent className="p-0">
                   {typeof "window" !== "undefined" && selectedClip ? (
-                    selectedClip.status === "ready" && selectedClip.hlsPrefix ? (
+                    selectedClip.status === "ready" &&
+                    selectedClip.hlsPrefix ? (
                       <PlyrPlayer
                         src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
                         autoplay={autoplayKey > 0}
@@ -222,7 +227,9 @@ export default function EventDetailPage({
                     )
                   ) : (
                     <div className="aspect-video bg-muted flex items-center justify-center">
-                      <p className="text-muted-foreground">Select a clip to play</p>
+                      <p className="text-muted-foreground">
+                        Select a clip to play
+                      </p>
                     </div>
                   )}
                 </CardContent>

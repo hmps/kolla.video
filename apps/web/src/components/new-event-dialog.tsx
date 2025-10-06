@@ -30,8 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useTRPC } from "@/trpc/client";
 import { cn } from "@/lib/utils";
+import { useTRPC } from "@/trpc/client";
 
 export function NewEventDialog({ teamId }: { teamId: number }) {
   const [open, setOpen] = useState(false);
@@ -105,7 +105,10 @@ export function NewEventDialog({ teamId }: { teamId: number }) {
 
             <div className="grid gap-2">
               <Label htmlFor="type">Type</Label>
-              <Select value={type} onValueChange={(v) => setType(v as "game" | "practice")}>
+              <Select
+                value={type}
+                onValueChange={(v) => setType(v as "game" | "practice")}
+              >
                 <SelectTrigger id="type">
                   <SelectValue />
                 </SelectTrigger>
@@ -163,7 +166,11 @@ export function NewEventDialog({ teamId }: { teamId: number }) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={createMutation.isPending || !date}>

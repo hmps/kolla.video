@@ -1,6 +1,7 @@
 "use client";
 
 import Hls from "hls.js";
+import type Plyr from "plyr";
 import { memo, useEffect, useRef, useState } from "react";
 
 interface PlyrPlayerProps {
@@ -23,7 +24,7 @@ export const PlyrPlayer = memo(function PlyrPlayer({
   autoplay = false,
 }: PlyrPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<Plyr | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [initialized, setInitialized] = useState(false);
@@ -93,14 +94,14 @@ export const PlyrPlayer = memo(function PlyrPlayer({
       if (player) {
         try {
           player.destroy();
-        } catch (e) {
+        } catch {
           // Ignore errors during cleanup
         }
       }
       if (hls) {
         try {
           hls.destroy();
-        } catch (e) {
+        } catch {
           // Ignore errors during cleanup
         }
       }

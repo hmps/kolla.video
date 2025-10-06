@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use } from "react";
+import { EditEventDialog } from "@/components/edit-event-dialog";
+import { NewEventDialog } from "@/components/new-event-dialog";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,8 +28,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useTRPC } from "@/trpc/client";
-import { EditEventDialog } from "@/components/edit-event-dialog";
-import { NewEventDialog } from "@/components/new-event-dialog";
 
 export default function EventsPage({
   params,
