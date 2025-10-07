@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import {
   ChevronDown,
   ChevronUp,
+  Keyboard,
   Pause,
   Play,
   RotateCcw,
@@ -13,7 +14,6 @@ import {
 import Link from "next/link";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CommentSection } from "@/components/comment-section";
-import { PlyrPlayer, type PlyrPlayerRef } from "@/components/plyr-player";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,9 +34,20 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  VidstackPlayer,
+  type VidstackPlayerRef,
+} from "@/components/vidstack-player";
 import env from "@/env/client";
 import { useTRPC } from "@/trpc/client";
 import { getColumns } from "./columns";
@@ -53,10 +64,11 @@ export default function EventDetailPage({
 
   const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
   const [clipsToDelete, setClipsToDelete] = useState<number[]>([]);
-  const [autoplayKey, setAutoplayKey] = useState(0);
+  const [shouldAutoplay, setShouldAutoplay] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const mobilePlayerRef = useRef<PlyrPlayerRef>(null);
-  const desktopPlayerRef = useRef<PlyrPlayerRef>(null);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const mobilePlayerRef = useRef<VidstackPlayerRef>(null);
+  const desktopPlayerRef = useRef<VidstackPlayerRef>(null);
 
   const trpc = useTRPC();
   const { data: team } = useQuery(
@@ -79,10 +91,11 @@ export default function EventDetailPage({
     }),
   );
 
-  // Load first clip on mount
+  // Load first clip on mount with autoplay
   useEffect(() => {
     if (clips && clips.length > 0 && selectedClipId === null) {
       setSelectedClipId(clips[0].id);
+      setShouldAutoplay(true);
     }
   }, [clips, selectedClipId]);
 
@@ -117,7 +130,7 @@ export default function EventDetailPage({
 
   const handleRowClick = useCallback((clip: { id: number }) => {
     setSelectedClipId(clip.id);
-    setAutoplayKey((prev) => prev + 1);
+    setShouldAutoplay(true);
   }, []);
 
   const goToPreviousClip = useCallback(() => {
@@ -125,7 +138,7 @@ export default function EventDetailPage({
     const currentIndex = clips.findIndex((clip) => clip.id === selectedClipId);
     if (currentIndex > 0) {
       setSelectedClipId(clips[currentIndex - 1].id);
-      setAutoplayKey((prev) => prev + 1);
+      setShouldAutoplay(true);
     }
   }, [clips, selectedClipId]);
 
@@ -134,28 +147,37 @@ export default function EventDetailPage({
     const currentIndex = clips.findIndex((clip) => clip.id === selectedClipId);
     if (currentIndex < clips.length - 1) {
       setSelectedClipId(clips[currentIndex + 1].id);
-      setAutoplayKey((prev) => prev + 1);
+      setShouldAutoplay(true);
     }
   }, [clips, selectedClipId]);
 
   const seekBackward = useCallback(() => {
-    const player =
-      mobilePlayerRef.current?.player || desktopPlayerRef.current?.player;
-    if (player) {
-      const newTime = Math.max(0, player.currentTime - 1);
-      player.currentTime = newTime;
+    if (mobilePlayerRef.current?.player) {
+      mobilePlayerRef.current.player.currentTime = Math.max(
+        0,
+        mobilePlayerRef.current.player.currentTime - 1,
+      );
+    }
+    if (desktopPlayerRef.current?.player) {
+      desktopPlayerRef.current.player.currentTime = Math.max(
+        0,
+        desktopPlayerRef.current.player.currentTime - 1,
+      );
     }
   }, []);
 
   const seekForward = useCallback(() => {
-    const player =
-      mobilePlayerRef.current?.player || desktopPlayerRef.current?.player;
-    if (player) {
-      const newTime = Math.min(
-        player.duration || player.currentTime + 1,
-        player.currentTime + 1,
+    if (mobilePlayerRef.current?.player) {
+      mobilePlayerRef.current.player.currentTime = Math.min(
+        mobilePlayerRef.current.player.duration,
+        mobilePlayerRef.current.player.currentTime + 1,
       );
-      player.currentTime = newTime;
+    }
+    if (desktopPlayerRef.current?.player) {
+      desktopPlayerRef.current.player.currentTime = Math.min(
+        desktopPlayerRef.current.player.duration,
+        desktopPlayerRef.current.player.currentTime + 1,
+      );
     }
   }, []);
 
@@ -168,12 +190,25 @@ export default function EventDetailPage({
   }, []);
 
   const togglePlayPause = useCallback(() => {
-    const player =
-      mobilePlayerRef.current?.player || desktopPlayerRef.current?.player;
-    if (player?.playing) {
-      player.pause();
-    } else if (player) {
-      player.play();
+    if (mobilePlayerRef.current?.player) {
+      const player = mobilePlayerRef.current.player;
+      if (player.paused) {
+        player.play().catch((error) => {
+          console.warn("Play failed:", error);
+        });
+      } else {
+        player.pause();
+      }
+    }
+    if (desktopPlayerRef.current?.player) {
+      const player = desktopPlayerRef.current.player;
+      if (player.paused) {
+        player.play().catch((error) => {
+          console.warn("Play failed:", error);
+        });
+      } else {
+        player.pause();
+      }
     }
   }, []);
 
@@ -193,28 +228,42 @@ export default function EventDetailPage({
         (clip) => clip.id === selectedClipId,
       );
 
-      if (e.key === "ArrowDown" || e.key === "j") {
+      // Clip navigation: j/k or ArrowDown/ArrowUp
+      if (e.key === "j" || e.key === "ArrowDown") {
         e.preventDefault();
         if (currentIndex === -1) {
           setSelectedClipId(clips[0].id);
         } else if (currentIndex < clips.length - 1) {
           setSelectedClipId(clips[currentIndex + 1].id);
         }
-        setAutoplayKey((prev) => prev + 1);
-      } else if (e.key === "ArrowUp" || e.key === "k") {
+        setShouldAutoplay(true);
+      } else if (e.key === "k" || e.key === "ArrowUp") {
         e.preventDefault();
         if (currentIndex === -1) {
           setSelectedClipId(clips[clips.length - 1].id);
         } else if (currentIndex > 0) {
           setSelectedClipId(clips[currentIndex - 1].id);
         }
-        setAutoplayKey((prev) => prev + 1);
+        setShouldAutoplay(true);
+      }
+      // Seek: h/l or ArrowLeft/ArrowRight
+      else if (e.key === "h" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        seekBackward();
+      } else if (e.key === "l" || e.key === "ArrowRight") {
+        e.preventDefault();
+        seekForward();
+      }
+      // Play/pause: Space
+      else if (e.key === " ") {
+        e.preventDefault();
+        togglePlayPause();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [clips, selectedClipId]);
+  }, [clips, selectedClipId, seekBackward, seekForward, togglePlayPause]);
 
   return (
     <>
@@ -257,9 +306,18 @@ export default function EventDetailPage({
               <span className="capitalize">{event.type}</span>
             </p>
           )}
-          <Link href={`/teams/${teamId}/events/${eventId}/upload`}>
-            <Button>Upload Clips</Button>
-          </Link>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsShortcutsOpen(true)}
+          >
+            <Keyboard className="h-4 w-4" />
+          </Button>
+          {team?.role === "coach" && (
+            <Link href={`/teams/${teamId}/events/${eventId}/upload`}>
+              <Button>Upload Clips</Button>
+            </Link>
+          )}
         </div>
       </header>
 
@@ -270,20 +328,30 @@ export default function EventDetailPage({
             <CardContent className="p-0">
               {typeof "window" !== "undefined" && selectedClip ? (
                 selectedClip.status === "ready" && selectedClip.hlsPrefix ? (
-                  <PlyrPlayer
+                  <VidstackPlayer
                     ref={mobilePlayerRef}
+                    key={selectedClip.id}
                     src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
-                    autoplay={autoplayKey > 0}
+                    autoplay={shouldAutoplay}
+                    muted={true}
+                    loop={true}
                     onPlay={handlePlay}
                     onPause={handlePause}
+                    onNextClip={goToNextClip}
+                    onPreviousClip={goToPreviousClip}
                   />
                 ) : selectedClip.storageKey ? (
-                  <PlyrPlayer
+                  <VidstackPlayer
                     ref={mobilePlayerRef}
+                    key={selectedClip.id}
                     src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.storageKey}`}
-                    autoplay={autoplayKey > 0}
+                    autoplay={shouldAutoplay}
+                    muted={true}
+                    loop={true}
                     onPlay={handlePlay}
                     onPause={handlePause}
+                    onNextClip={goToNextClip}
+                    onPreviousClip={goToPreviousClip}
                   />
                 ) : (
                   <div className="aspect-video bg-muted flex items-center justify-center">
@@ -379,20 +447,30 @@ export default function EventDetailPage({
                     {typeof "window" !== "undefined" && selectedClip ? (
                       selectedClip.status === "ready" &&
                       selectedClip.hlsPrefix ? (
-                        <PlyrPlayer
+                        <VidstackPlayer
                           ref={desktopPlayerRef}
+                          key={selectedClip.id}
                           src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
-                          autoplay={autoplayKey > 0}
+                          autoplay={shouldAutoplay}
+                          muted={true}
+                          loop={true}
                           onPlay={handlePlay}
                           onPause={handlePause}
+                          onNextClip={goToNextClip}
+                          onPreviousClip={goToPreviousClip}
                         />
                       ) : selectedClip.storageKey ? (
-                        <PlyrPlayer
+                        <VidstackPlayer
                           ref={desktopPlayerRef}
+                          key={selectedClip.id}
                           src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.storageKey}`}
-                          autoplay={autoplayKey > 0}
+                          autoplay={shouldAutoplay}
+                          muted={true}
+                          loop={true}
                           onPlay={handlePlay}
                           onPause={handlePause}
+                          onNextClip={goToNextClip}
+                          onPreviousClip={goToPreviousClip}
                         />
                       ) : (
                         <div className="aspect-video bg-muted flex items-center justify-center">
@@ -471,6 +549,71 @@ export default function EventDetailPage({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isShortcutsOpen} onOpenChange={setIsShortcutsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Keyboard Shortcuts</DialogTitle>
+            <DialogDescription>
+              Use these keyboard shortcuts to navigate and control playback
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold mb-2">Navigation</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Next clip</span>
+                  <div className="flex gap-1 items-center">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">j</kbd>
+                    <span className="text-muted-foreground">/</span>
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">↓</kbd>
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Previous clip</span>
+                  <div className="flex gap-1 items-center">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">k</kbd>
+                    <span className="text-muted-foreground">/</span>
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">↑</kbd>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Playback</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Play / Pause</span>
+                  <kbd className="px-2 py-1 bg-muted rounded text-xs">
+                    Space
+                  </kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    Seek backward (1s)
+                  </span>
+                  <div className="flex gap-1 items-center">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">h</kbd>
+                    <span className="text-muted-foreground">/</span>
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">←</kbd>
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    Seek forward (1s)
+                  </span>
+                  <div className="flex gap-1 items-center">
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">l</kbd>
+                    <span className="text-muted-foreground">/</span>
+                    <kbd className="px-2 py-1 bg-muted rounded text-xs">→</kbd>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

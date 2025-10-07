@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { use, useState } from "react";
-import { PlyrPlayer } from "@/components/plyr-player";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -12,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { VidstackPlayer } from "@/components/vidstack-player";
 import env from "@/env/client";
 import { useTRPC } from "@/trpc/client";
 
@@ -74,7 +74,7 @@ export default function SharePage({
               <Card>
                 <CardContent className="p-0">
                   {selectedClip.hlsPrefix && (
-                    <PlyrPlayer
+                    <VidstackPlayer
                       src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
                     />
                   )}
