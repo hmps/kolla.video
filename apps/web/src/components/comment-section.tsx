@@ -34,6 +34,7 @@ interface CommentSectionProps {
 
 export interface CommentSectionRef {
   focusInput: () => void;
+  toggle: () => void;
 }
 
 export const CommentSection = memo(
@@ -97,6 +98,9 @@ export const CommentSection = memo(
           } else {
             textareaRef.current?.focus();
           }
+        },
+        toggle: () => {
+          setIsOpen((prev) => !prev);
         },
       }));
 

@@ -27,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -35,7 +36,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -75,6 +75,8 @@ export default function EventDetailPage({
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
   const [tagInput, setTagInput] = useState("");
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [nameInput, setNameInput] = useState("");
   const mobilePlayerRef = useRef<VidstackPlayerRef>(null);
   const desktopPlayerRef = useRef<VidstackPlayerRef>(null);
   const commentSectionRef = useRef<CommentSectionRef>(null);
@@ -119,6 +121,14 @@ export default function EventDetailPage({
 
   const setTags = useMutation(
     trpc.clips.setTags.mutationOptions({
+      onSuccess: () => {
+        refetchClips();
+      },
+    }),
+  );
+
+  const updateName = useMutation(
+    trpc.clips.updateName.mutationOptions({
       onSuccess: () => {
         refetchClips();
       },
@@ -185,6 +195,23 @@ export default function EventDetailPage({
     setIsTagDialogOpen(false);
     setTagInput("");
   }, [selectedClipId, selectedClip, tagInput, teamIdNum, setTags]);
+
+  const handleRename = useCallback(() => {
+    if (!selectedClipId || !nameInput.trim()) {
+      setIsRenameDialogOpen(false);
+      setNameInput("");
+      return;
+    }
+
+    updateName.mutate({
+      teamId: teamIdNum,
+      clipId: selectedClipId,
+      name: nameInput.trim(),
+    });
+
+    setIsRenameDialogOpen(false);
+    setNameInput("");
+  }, [selectedClipId, nameInput, teamIdNum, updateName]);
 
   const goToPreviousClip = useCallback(() => {
     if (!clips || clips.length === 0) return;
@@ -291,10 +318,27 @@ export default function EventDetailPage({
         return;
       }
 
+      // Open rename dialog: r
+      if (e.key === "r") {
+        e.preventDefault();
+        if (selectedClipId) {
+          setNameInput(selectedClip?.name ?? "");
+          setIsRenameDialogOpen(true);
+        }
+        return;
+      }
+
       // Focus comment input: c
       if (e.key === "c") {
         e.preventDefault();
         commentSectionRef.current?.focusInput();
+        return;
+      }
+
+      // Toggle comments (focus mode): f
+      if (e.key === "f") {
+        e.preventDefault();
+        commentSectionRef.current?.toggle();
         return;
       }
 
@@ -342,6 +386,7 @@ export default function EventDetailPage({
   }, [
     clips,
     selectedClipId,
+    selectedClip,
     seekBackward,
     seekForward,
     togglePlayPause,
@@ -699,12 +744,20 @@ export default function EventDetailPage({
               <h3 className="font-semibold mb-2">Actions</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Rename clip</span>
+                  <kbd className="px-2 py-1 bg-muted rounded text-xs">r</kbd>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Add tag</span>
                   <kbd className="px-2 py-1 bg-muted rounded text-xs">t</kbd>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Focus comment</span>
+                  <span className="text-muted-foreground">Add comment</span>
                   <kbd className="px-2 py-1 bg-muted rounded text-xs">c</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Toggle comments</span>
+                  <kbd className="px-2 py-1 bg-muted rounded text-xs">f</kbd>
                 </div>
               </div>
             </div>
@@ -726,7 +779,8 @@ export default function EventDetailPage({
           <DialogHeader>
             <DialogTitle>Add Tags</DialogTitle>
             <DialogDescription>
-              Add tags to {selectedClip?.name ?? `Clip #${selectedClip?.index}`}. Separate multiple tags with commas.
+              Add tags to {selectedClip?.name ?? `Clip #${selectedClip?.index}`}
+              . Separate multiple tags with commas.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -769,6 +823,46 @@ export default function EventDetailPage({
               Cancel
             </Button>
             <Button onClick={handleAddTags}>Add Tags</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Clip</DialogTitle>
+            <DialogDescription>
+              Set a name for {selectedClip?.name ?? `Clip #${selectedClip?.index}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleRename();
+                } else if (e.key === "Escape") {
+                  setIsRenameDialogOpen(false);
+                  setNameInput("");
+                }
+              }}
+              placeholder="Enter clip name"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsRenameDialogOpen(false);
+                setNameInput("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleRename}>Rename</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
