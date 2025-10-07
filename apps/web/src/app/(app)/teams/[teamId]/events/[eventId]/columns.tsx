@@ -15,8 +15,15 @@ export type Clip = {
   index: number;
   name?: string | null;
   status: string;
+  durationS?: number | null;
   tags?: Array<{ id: number; tag: string }>;
   comments?: Array<{ id: number }>;
+};
+
+const formatDuration = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
 function EditableNameCell({
@@ -353,6 +360,22 @@ export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
       const clip = row.original;
       const index = row.index;
       return <EditableNameCell clip={clip} index={index} isCoach={isCoach} />;
+    },
+  },
+  {
+    accessorKey: "duration_s",
+    header: "Duration",
+    size: 70,
+    maxSize: 70,
+    minSize: 70,
+    cell: ({ row }) => {
+      const duration = row.original.durationS;
+
+      return (
+        <div className="text-center text-muted-foreground text-sm">
+          {duration ? formatDuration(duration) : "—"}
+        </div>
+      );
     },
   },
   {

@@ -312,7 +312,11 @@ export default function EventDetailPage({
   }, []);
 
   const handleLoadedMetadata = useCallback(
-    (metadata: { duration: number; width: number; height: number }) => {
+    (metadata: {
+      duration: number | null;
+      width: number | null;
+      height: number | null;
+    }) => {
       // Only save metadata if clip is missing it and user is a coach
       if (!selectedClipId || team?.role !== "coach") return;
       if (!selectedClip) return;
