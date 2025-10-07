@@ -74,7 +74,7 @@ function DataTableInner<TData extends { id: number }, TValue>({
           </Button>
         </div>
       )}
-      <div className="rounded-md border">
+      <div className="rounded-md border max-h-[400px] overflow-y-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
