@@ -49,6 +49,19 @@ export const CommentSection = memo(
 
       const trpc = useTRPC();
 
+      // Detect and handle comment level commands
+      useEffect(() => {
+        const firstWord = commentText.trim().split(/\s+/)[0]?.toLowerCase();
+
+        if (firstWord === "@all") {
+          setCommentLevel("all");
+        } else if (firstWord === "@coaches") {
+          setCommentLevel("coaches");
+        } else if (firstWord === "@private") {
+          setCommentLevel("private");
+        }
+      }, [commentText]);
+
       const {
         data: comments,
         refetch: refetchComments,
@@ -114,10 +127,22 @@ export const CommentSection = memo(
     if (!clipId || !commentText.trim() || !isCoach) return;
     if (commentLevel === "private" && !targetUserId) return;
 
+    // Remove command prefix if present
+    let finalText = commentText.trim();
+    const firstWord = finalText.split(/\s+/)[0]?.toLowerCase();
+
+    if (firstWord === "@all" || firstWord === "@coaches" || firstWord === "@private") {
+      // Remove the command and any following whitespace
+      finalText = finalText.slice(firstWord.length).trim();
+    }
+
+    // Don't submit if the comment is empty after removing the command
+    if (!finalText) return;
+
     addComment.mutate({
       teamId,
       clipId,
-      body: commentText.trim(),
+      body: finalText,
       level: commentLevel,
       targetUserId,
     });
