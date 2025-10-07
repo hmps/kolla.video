@@ -304,9 +304,9 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
 export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
   {
     id: "select",
-    size: 50,
-    maxSize: 50,
-    minSize: 50,
+    size: 25,
+    maxSize: 25,
+    minSize: 25,
     header: ({ table }) => (
       <div className="flex items-center justify-start">
         <Checkbox
@@ -334,9 +334,9 @@ export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
   {
     accessorKey: "index",
     header: () => <div className="flex items-center justify-center">#</div>,
-    size: 50,
-    maxSize: 50,
-    minSize: 50,
+    size: 35,
+    maxSize: 35,
+    minSize: 35,
     cell: ({ row }) => {
       return (
         <div className="text-center text-muted-foreground">

@@ -146,6 +146,14 @@ export default function EventDetailPage({
     }),
   );
 
+  const updateMetadata = useMutation(
+    trpc.clips.updateMetadata.mutationOptions({
+      onSuccess: () => {
+        refetchClips();
+      },
+    }),
+  );
+
   const selectedClip = useMemo(
     () => clips?.find((clip) => clip.id === selectedClipId),
     [clips, selectedClipId],
@@ -302,6 +310,32 @@ export default function EventDetailPage({
       }
     }
   }, []);
+
+  const handleLoadedMetadata = useCallback(
+    (metadata: { duration: number; width: number; height: number }) => {
+      // Only save metadata if clip is missing it and user is a coach
+      if (!selectedClipId || team?.role !== "coach") return;
+      if (!selectedClip) return;
+
+      // Check if any metadata is missing
+      const needsUpdate = !!(
+        (selectedClip.width === null && metadata.width) ||
+        (selectedClip.durationS === null && metadata.duration) ||
+        (selectedClip.height === null && metadata.height)
+      );
+
+      if (needsUpdate) {
+        updateMetadata.mutate({
+          teamId: teamIdNum,
+          clipId: selectedClipId,
+          ...(metadata.duration ? { durationS: metadata.duration } : {}),
+          ...(metadata.width ? { width: metadata.width } : {}),
+          ...(metadata.height ? { height: metadata.height } : {}),
+        });
+      }
+    },
+    [selectedClipId, selectedClip, team?.role, teamIdNum, updateMetadata],
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -501,6 +535,7 @@ export default function EventDetailPage({
                     loop={true}
                     onPlay={handlePlay}
                     onPause={handlePause}
+                    onLoadedMetadata={handleLoadedMetadata}
                     onNextClip={goToNextClip}
                     onPreviousClip={goToPreviousClip}
                     title={selectedClip.name ?? `Clip #${selectedClip.index}`}
@@ -516,6 +551,7 @@ export default function EventDetailPage({
                     loop={true}
                     onPlay={handlePlay}
                     onPause={handlePause}
+                    onLoadedMetadata={handleLoadedMetadata}
                     onNextClip={goToNextClip}
                     onPreviousClip={goToPreviousClip}
                     title={selectedClip.name ?? `Clip #${selectedClip.index}`}
@@ -624,6 +660,7 @@ export default function EventDetailPage({
                           loop={true}
                           onPlay={handlePlay}
                           onPause={handlePause}
+                          onLoadedMetadata={handleLoadedMetadata}
                           onNextClip={goToNextClip}
                           onPreviousClip={goToPreviousClip}
                           title={
@@ -641,6 +678,7 @@ export default function EventDetailPage({
                           loop={true}
                           onPlay={handlePlay}
                           onPause={handlePause}
+                          onLoadedMetadata={handleLoadedMetadata}
                           onNextClip={goToNextClip}
                           onPreviousClip={goToPreviousClip}
                           title={
