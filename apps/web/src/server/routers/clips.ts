@@ -200,20 +200,26 @@ export const clipsRouter = router({
       // Verify clip belongs to team
       const clip = await db.query.clips.findFirst({
         where: and(eq(clips.id, input.clipId), eq(clips.teamId, input.teamId)),
+        with: {
+          tags: true,
+        },
       });
 
       if (!clip) {
         throw new Error("Clip not found");
       }
 
-      // Delete existing tags
-      await db.delete(clipTags).where(eq(clipTags.clipId, input.clipId));
+      // Get existing tags
+      const existingTags = new Set(clip.tags.map((t) => t.tag));
 
-      // Insert new tags
-      if (input.tags.length > 0) {
+      // Filter out duplicate tags (case-sensitive)
+      const uniqueNewTags = input.tags.filter((tag) => !existingTags.has(tag));
+
+      // Insert only new unique tags
+      if (uniqueNewTags.length > 0) {
         await db
           .insert(clipTags)
-          .values(input.tags.map((tag) => ({ clipId: input.clipId, tag })));
+          .values(uniqueNewTags.map((tag) => ({ clipId: input.clipId, tag })));
       }
 
       return { success: true };
@@ -286,6 +292,52 @@ export const clipsRouter = router({
         .update(clips)
         .set({ name: input.name })
         .where(eq(clips.id, input.clipId));
+
+      return { success: true };
+    }),
+
+  updateMetadata: teamProcedure
+    .input(
+      z.object({
+        teamId: z.number(),
+        clipId: z.number(),
+        durationS: z.number().positive().optional(),
+        width: z.number().int().positive().optional(),
+        height: z.number().int().positive().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      console.log("[debug] input", input);
+      // Verify clip belongs to team
+      const clip = await db.query.clips.findFirst({
+        where: and(eq(clips.id, input.clipId), eq(clips.teamId, input.teamId)),
+      });
+
+      if (!clip) {
+        throw new Error("Clip not found");
+      }
+
+      // Only update fields that are provided and not already set
+      const updates: {
+        durationS?: number;
+        width?: number;
+        height?: number;
+      } = {};
+
+      if (input.durationS !== undefined && clip.durationS === null) {
+        updates.durationS = input.durationS;
+      }
+      if (input.width !== undefined && clip.width === null) {
+        updates.width = input.width;
+      }
+      if (input.height !== undefined && clip.height === null) {
+        updates.height = input.height;
+      }
+
+      // Only update if there are fields to update
+      if (Object.keys(updates).length > 0) {
+        await db.update(clips).set(updates).where(eq(clips.id, input.clipId));
+      }
 
       return { success: true };
     }),
