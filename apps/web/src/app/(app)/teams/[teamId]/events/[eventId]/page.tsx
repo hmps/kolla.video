@@ -126,6 +126,11 @@ export default function EventDetailPage({
     [clips, selectedClipId],
   );
 
+  const columns = useMemo(
+    () => getColumns(team?.role === "coach"),
+    [team?.role],
+  );
+
   const handleDeleteSelected = useCallback((selectedIds: number[]) => {
     if (selectedIds.length === 0) return;
     setClipsToDelete(selectedIds);
@@ -573,7 +578,7 @@ export default function EventDetailPage({
 
             {/* Data Table Section */}
             <DataTable
-              columns={getColumns(team?.role === "coach")}
+              columns={columns}
               data={clips ?? []}
               onDeleteSelected={handleDeleteSelected}
               onRowClick={handleRowClick}

@@ -150,4 +150,16 @@ function DataTableInner<TData extends { id: number }, TValue>({
   );
 }
 
-export const DataTable = memo(DataTableInner) as typeof DataTableInner;
+export const DataTable = memo(
+  DataTableInner,
+  (prevProps, nextProps) => {
+    // Only re-render if these specific props change
+    return (
+      prevProps.data === nextProps.data &&
+      prevProps.columns === nextProps.columns &&
+      prevProps.selectedId === nextProps.selectedId &&
+      prevProps.onDeleteSelected === nextProps.onDeleteSelected &&
+      prevProps.onRowClick === nextProps.onRowClick
+    );
+  },
+) as typeof DataTableInner;
