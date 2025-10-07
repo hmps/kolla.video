@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Plus, X } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -127,6 +127,7 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
     id: number;
     tag: string;
   }> | null>(null);
+  const shouldPreventBlurRef = useRef(false);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -177,6 +178,7 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
   };
 
   const removeTag = (tagToRemove: { id: number; tag: string }) => {
+    shouldPreventBlurRef.current = true;
     const newTags = currentTags.filter((t) => t.tag !== tagToRemove.tag);
     setOptimisticTags(newTags);
 
@@ -185,6 +187,11 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
       clipId: clip.id,
       tags: newTags.map((t) => t.tag),
     });
+
+    // Reset the flag after a short delay
+    setTimeout(() => {
+      shouldPreventBlurRef.current = false;
+    }, 100);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -224,6 +231,7 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
+                
                 removeTag(tag);
               }}
               className="hover:bg-accent rounded-sm p-0.5"
@@ -237,6 +245,7 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={() => {
+            if (shouldPreventBlurRef.current) return;
             if (inputValue.trim()) {
               addTags(inputValue);
             }
