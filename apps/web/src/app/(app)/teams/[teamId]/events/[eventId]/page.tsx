@@ -6,10 +6,13 @@ import {
   ChevronDown,
   ChevronUp,
   Keyboard,
+  MoreVertical,
   Pause,
+  Pencil,
   Play,
   RotateCcw,
   RotateCw,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -17,6 +20,7 @@ import {
   CommentSection,
   type CommentSectionRef,
 } from "@/components/comment-section";
+import { EditEventDialog } from "@/components/edit-event-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +50,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -77,6 +87,7 @@ export default function EventDetailPage({
   const [tagInput, setTagInput] = useState("");
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [nameInput, setNameInput] = useState("");
+  const [isEditEventDialogOpen, setIsEditEventDialogOpen] = useState(false);
   const mobilePlayerRef = useRef<VidstackPlayerRef>(null);
   const desktopPlayerRef = useRef<VidstackPlayerRef>(null);
   const commentSectionRef = useRef<CommentSectionRef>(null);
@@ -441,10 +452,31 @@ export default function EventDetailPage({
           >
             <Keyboard className="h-4 w-4" />
           </Button>
-          {team?.role === "coach" && (
-            <Link href={`/teams/${teamId}/events/${eventId}/upload`}>
-              <Button>Upload Clips</Button>
-            </Link>
+          {team?.role === "coach" && event && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link
+                    href={`/teams/${teamId}/events/${eventId}/upload`}
+                    className="flex items-center"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Clips
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setIsEditEventDialogOpen(true)}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit Event
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </header>
@@ -467,6 +499,10 @@ export default function EventDetailPage({
                     onPause={handlePause}
                     onNextClip={goToNextClip}
                     onPreviousClip={goToPreviousClip}
+                    title={
+                      selectedClip.name ?? `Clip #${selectedClip.index}`
+                    }
+                    tags={selectedClip.tags?.map((t) => t.tag) ?? []}
                   />
                 ) : selectedClip.storageKey ? (
                   <VidstackPlayer
@@ -480,6 +516,10 @@ export default function EventDetailPage({
                     onPause={handlePause}
                     onNextClip={goToNextClip}
                     onPreviousClip={goToPreviousClip}
+                    title={
+                      selectedClip.name ?? `Clip #${selectedClip.index}`
+                    }
+                    tags={selectedClip.tags?.map((t) => t.tag) ?? []}
                   />
                 ) : (
                   <div className="aspect-video bg-muted flex items-center justify-center">
@@ -586,6 +626,10 @@ export default function EventDetailPage({
                           onPause={handlePause}
                           onNextClip={goToNextClip}
                           onPreviousClip={goToPreviousClip}
+                          title={
+                            selectedClip.name ?? `Clip #${selectedClip.index}`
+                          }
+                          tags={selectedClip.tags?.map((t) => t.tag) ?? []}
                         />
                       ) : selectedClip.storageKey ? (
                         <VidstackPlayer
@@ -599,6 +643,10 @@ export default function EventDetailPage({
                           onPause={handlePause}
                           onNextClip={goToNextClip}
                           onPreviousClip={goToPreviousClip}
+                          title={
+                            selectedClip.name ?? `Clip #${selectedClip.index}`
+                          }
+                          tags={selectedClip.tags?.map((t) => t.tag) ?? []}
                         />
                       ) : (
                         <div className="aspect-video bg-muted flex items-center justify-center">
@@ -832,7 +880,8 @@ export default function EventDetailPage({
           <DialogHeader>
             <DialogTitle>Rename Clip</DialogTitle>
             <DialogDescription>
-              Set a name for {selectedClip?.name ?? `Clip #${selectedClip?.index}`}
+              Set a name for{" "}
+              {selectedClip?.name ?? `Clip #${selectedClip?.index}`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -866,6 +915,16 @@ export default function EventDetailPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {event && (
+        <EditEventDialog
+          event={event}
+          teamId={teamIdNum}
+          open={isEditEventDialogOpen}
+          onOpenChange={setIsEditEventDialogOpen}
+          hideTrigger={true}
+        />
+      )}
     </>
   );
 }

@@ -46,11 +46,16 @@ type Event = {
 export function EditEventDialog({
   event,
   teamId,
+  open,
+  onOpenChange,
+  hideTrigger,
 }: {
   event: Event;
   teamId: number;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(event.title);
   const [date, setDate] = useState<Date>(new Date(event.date));
   const [type, setType] = useState<"game" | "practice">(event.type);
@@ -66,7 +71,7 @@ export function EditEventDialog({
         queryClient.invalidateQueries({
           queryKey: [["events", "list"], { input: { teamId } }],
         });
-        setOpen(false);
+        onOpenChange?.(false);
       },
     }),
   );
@@ -85,7 +90,7 @@ export function EditEventDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
@@ -93,6 +98,7 @@ export function EditEventDialog({
           onClick={(e) => {
             e.stopPropagation();
           }}
+          className={cn(hideTrigger && "hidden")}
         >
           <Pencil className="size-4" />
         </Button>
