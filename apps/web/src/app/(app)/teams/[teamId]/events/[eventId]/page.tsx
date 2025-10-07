@@ -271,7 +271,7 @@ export default function EventDetailPage({
                 selectedClip.status === "ready" && selectedClip.hlsPrefix ? (
                   <PlyrPlayer
                     ref={mobilePlayerRef}
-                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
+                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
                     autoplay={autoplayKey > 0}
                     onPlay={handlePlay}
                     onPause={handlePause}
@@ -279,7 +279,7 @@ export default function EventDetailPage({
                 ) : selectedClip.storageKey ? (
                   <PlyrPlayer
                     ref={mobilePlayerRef}
-                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
+                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.storageKey}`}
                     autoplay={autoplayKey > 0}
                     onPlay={handlePlay}
                     onPause={handlePause}
@@ -380,7 +380,7 @@ export default function EventDetailPage({
                       selectedClip.hlsPrefix ? (
                         <PlyrPlayer
                           ref={desktopPlayerRef}
-                          src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
+                          src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
                           autoplay={autoplayKey > 0}
                           onPlay={handlePlay}
                           onPause={handlePause}
@@ -388,7 +388,7 @@ export default function EventDetailPage({
                       ) : selectedClip.storageKey ? (
                         <PlyrPlayer
                           ref={desktopPlayerRef}
-                          src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.storageKey}`}
+                          src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.storageKey}`}
                           autoplay={autoplayKey > 0}
                           onPlay={handlePlay}
                           onPause={handlePause}

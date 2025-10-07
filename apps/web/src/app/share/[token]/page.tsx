@@ -74,7 +74,7 @@ export default function SharePage({
                 <CardContent className="p-0">
                   {selectedClip.hlsPrefix && (
                     <PlyrPlayer
-                      src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}${selectedClip.hlsPrefix}master.m3u8`}
+                      src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
                     />
                   )}
                 </CardContent>
