@@ -83,11 +83,17 @@ function DataTableInner<TData extends { id: number }, TValue>({
                   return (
                     <TableHead
                       key={header.id}
-                      className={
-                        header.column.columnDef.maxSize
-                          ? `w-[${header.column.columnDef.size}px] max-w-[${header.column.columnDef.maxSize}px]`
-                          : ""
-                      }
+                      style={{
+                        width: header.column.columnDef.size
+                          ? `${header.column.columnDef.size}px`
+                          : "auto",
+                        maxWidth: header.column.columnDef.maxSize
+                          ? `${header.column.columnDef.maxSize}px`
+                          : undefined,
+                        minWidth: header.column.columnDef.minSize
+                          ? `${header.column.columnDef.minSize}px`
+                          : undefined,
+                      }}
                     >
                       {header.isPlaceholder
                         ? null
@@ -113,11 +119,17 @@ function DataTableInner<TData extends { id: number }, TValue>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className={
-                        cell.column.columnDef.maxSize
-                          ? `w-[${cell.column.columnDef.size}px] max-w-[${cell.column.columnDef.maxSize}px]`
-                          : ""
-                      }
+                      style={{
+                        width: cell.column.columnDef.size
+                          ? `${cell.column.columnDef.size}px`
+                          : "auto",
+                        maxWidth: cell.column.columnDef.maxSize
+                          ? `${cell.column.columnDef.maxSize}px`
+                          : undefined,
+                        minWidth: cell.column.columnDef.minSize
+                          ? `${cell.column.columnDef.minSize}px`
+                          : undefined,
+                      }}
                       onClick={(e) => {
                         // Don't trigger row click when clicking checkbox
                         if (cell.column.id === "select") {

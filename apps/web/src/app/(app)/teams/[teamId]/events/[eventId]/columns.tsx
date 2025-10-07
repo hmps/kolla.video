@@ -231,7 +231,7 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                
+
                 removeTag(tag);
               }}
               className="hover:bg-accent rounded-sm p-0.5"
@@ -304,9 +304,9 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
 export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
   {
     id: "select",
-    size: 40,
-    maxSize: 40,
-    minSize: 40,
+    size: 50,
+    maxSize: 50,
+    minSize: 50,
     header: ({ table }) => (
       <div className="flex items-center justify-start">
         <Checkbox
@@ -334,9 +334,9 @@ export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
   {
     accessorKey: "index",
     header: () => <div className="flex items-center justify-center">#</div>,
-    size: 40,
-    maxSize: 40,
-    minSize: 40,
+    size: 50,
+    maxSize: 50,
+    minSize: 50,
     cell: ({ row }) => {
       return (
         <div className="text-center text-muted-foreground">
@@ -348,6 +348,7 @@ export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
   {
     accessorKey: "name",
     header: "Name",
+    size: 300,
     cell: ({ row }) => {
       const clip = row.original;
       const index = row.index;
@@ -357,6 +358,7 @@ export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
   {
     accessorKey: "tags",
     header: "Tags",
+    size: 400,
     cell: ({ row }) => {
       const clip = row.original;
       return <EditableTagsCell clip={clip} isCoach={isCoach} />;
@@ -365,13 +367,13 @@ export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
   {
     accessorKey: "comments",
     header: "Comments",
-    size: 90,
-    maxSize: 90,
-    minSize: 90,
+    size: 100,
+    maxSize: 100,
+    minSize: 100,
     cell: ({ row }) => {
       const commentCount = row.original.comments?.length ?? 0;
       return (
-        <div className="text-center text-muted-foreground text-sm">
+        <div className="text-muted-foreground text-sm">
           {commentCount > 0 ? commentCount : "—"}
         </div>
       );
