@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import env from "@/env/client";
 import { useTRPC } from "@/trpc/client";
 
 export default function SharePage({
@@ -74,7 +75,7 @@ export default function SharePage({
                 <CardContent className="p-0">
                   {selectedClip.hlsPrefix && (
                     <PlyrPlayer
-                      src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
+                      src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
                     />
                   )}
                 </CardContent>

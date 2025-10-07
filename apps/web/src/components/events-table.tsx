@@ -98,10 +98,11 @@ export function EventsTable({
       {/* Mobile view - card-based layout */}
       <div className="md:hidden space-y-3">
         {events.map((event) => (
-          <div
+          <button
             key={event.id}
-            className="rounded-lg border p-4 cursor-pointer hover:bg-accent transition-colors"
-            onClick={() =>
+            type="button"
+            className="rounded-lg w-full text-left border p-4 cursor-pointer hover:bg-accent transition-colors"
+            onKeyUp={() =>
               router.push(`/teams/${event.teamId}/events/${event.id}`)
             }
           >
@@ -125,7 +126,7 @@ export function EventsTable({
                 <EditEventDialog event={event} teamId={teamId} />
               </div>
             )}
-          </div>
+          </button>
         ))}
       </div>
 

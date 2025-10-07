@@ -3,16 +3,11 @@ import { getDb, users } from "@kolla/db";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
+import env from "@/env/server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
-
-  if (!WEBHOOK_SECRET) {
-    throw new Error("Please add CLERK_WEBHOOK_SECRET to .env");
-  }
-
   const db = getDb();
 
   // Get the headers
@@ -30,7 +25,7 @@ export async function POST(req: Request) {
   const body = JSON.stringify(payload);
 
   // Verify webhook
-  const wh = new Webhook(WEBHOOK_SECRET);
+  const wh = new Webhook(env.CLERK_WEBHOOK_SECRET);
   let evt: WebhookEvent;
 
   try {

@@ -13,7 +13,7 @@ export async function GET() {
         userId: userId || null,
       },
       database: {
-        user: null as any,
+        user: null as null | Record<string, unknown>,
       },
       timestamp: new Date().toISOString(),
     };

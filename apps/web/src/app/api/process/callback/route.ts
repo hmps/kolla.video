@@ -1,13 +1,14 @@
 import { clips, getDb } from "@kolla/db";
 import { eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
+import env from "@/env/server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
     const signature = request.headers.get("x-job-secret");
-    if (signature !== process.env.JOB_SHARED_SECRET) {
+    if (signature !== env.JOB_SHARED_SECRET) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

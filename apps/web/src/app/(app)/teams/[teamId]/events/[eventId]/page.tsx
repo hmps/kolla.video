@@ -37,6 +37,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
+import env from "@/env/client";
 import { useTRPC } from "@/trpc/client";
 import { getColumns } from "./columns";
 import { DataTable } from "./data-table";
@@ -271,7 +272,7 @@ export default function EventDetailPage({
                 selectedClip.status === "ready" && selectedClip.hlsPrefix ? (
                   <PlyrPlayer
                     ref={mobilePlayerRef}
-                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
+                    src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
                     autoplay={autoplayKey > 0}
                     onPlay={handlePlay}
                     onPause={handlePause}
@@ -279,7 +280,7 @@ export default function EventDetailPage({
                 ) : selectedClip.storageKey ? (
                   <PlyrPlayer
                     ref={mobilePlayerRef}
-                    src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.storageKey}`}
+                    src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.storageKey}`}
                     autoplay={autoplayKey > 0}
                     onPlay={handlePlay}
                     onPause={handlePause}
@@ -380,7 +381,7 @@ export default function EventDetailPage({
                       selectedClip.hlsPrefix ? (
                         <PlyrPlayer
                           ref={desktopPlayerRef}
-                          src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
+                          src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
                           autoplay={autoplayKey > 0}
                           onPlay={handlePlay}
                           onPause={handlePause}
@@ -388,7 +389,7 @@ export default function EventDetailPage({
                       ) : selectedClip.storageKey ? (
                         <PlyrPlayer
                           ref={desktopPlayerRef}
-                          src={`${process.env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.storageKey}`}
+                          src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.storageKey}`}
                           autoplay={autoplayKey > 0}
                           onPlay={handlePlay}
                           onPause={handlePause}

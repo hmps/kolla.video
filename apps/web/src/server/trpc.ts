@@ -18,29 +18,46 @@ export const createContext = cache(async () => {
 
     if (existingUser) {
       dbUser = existingUser;
-      console.log("[tRPC Context] DB user found:", { id: dbUser.id, email: dbUser.email });
+      console.log("[tRPC Context] DB user found:", {
+        id: dbUser.id,
+        email: dbUser.email,
+      });
     } else {
-      console.warn("[tRPC Context] Clerk user authenticated but NO DB user found for userId:", userId);
+      console.warn(
+        "[tRPC Context] Clerk user authenticated but NO DB user found for userId:",
+        userId,
+      );
 
       // Fallback: Auto-create user from Clerk data if webhook missed
       try {
-        console.log("[tRPC Context] Attempting to fetch user from Clerk API and create DB record...");
+        console.log(
+          "[tRPC Context] Attempting to fetch user from Clerk API and create DB record...",
+        );
         const client = await clerkClient();
         const clerkUser = await client.users.getUser(userId);
         const email = clerkUser.emailAddresses[0]?.emailAddress;
 
         if (!email) {
-          console.error("[tRPC Context] No email found for Clerk user:", userId);
+          console.error(
+            "[tRPC Context] No email found for Clerk user:",
+            userId,
+          );
         } else {
-          const [newUser] = await db.insert(users).values({
-            clerkUserId: userId,
-            email,
-            firstName: clerkUser.firstName,
-            lastName: clerkUser.lastName,
-          }).returning();
+          const [newUser] = await db
+            .insert(users)
+            .values({
+              clerkUserId: userId,
+              email,
+              firstName: clerkUser.firstName,
+              lastName: clerkUser.lastName,
+            })
+            .returning();
 
           dbUser = newUser;
-          console.log("[tRPC Context] Successfully auto-created DB user:", { id: newUser.id, email: newUser.email });
+          console.log("[tRPC Context] Successfully auto-created DB user:", {
+            id: newUser.id,
+            email: newUser.email,
+          });
         }
       } catch (error) {
         console.error("[tRPC Context] Failed to auto-create user:", error);
