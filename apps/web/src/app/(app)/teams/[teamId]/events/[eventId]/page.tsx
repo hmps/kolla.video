@@ -313,6 +313,11 @@ export default function EventDetailPage({
         return;
       }
 
+      // Ignore if any modifier keys are held
+      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
+        return;
+      }
+
       // Open shortcuts dialog: ?
       if (e.key === "?") {
         e.preventDefault();
