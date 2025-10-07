@@ -165,8 +165,19 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
 
     if (newTagStrings.length === 0) return;
 
-    const existingTagStrings = currentTags.map((t) => t.tag);
-    const allTagStrings = [...existingTagStrings, ...newTagStrings];
+    const existingTagStrings = new Set(currentTags.map((t) => t.tag));
+
+    // Filter out duplicates - only add tags that don't already exist
+    const uniqueNewTags = newTagStrings.filter(
+      (tag) => !existingTagStrings.has(tag),
+    );
+
+    if (uniqueNewTags.length === 0) {
+      setInputValue("");
+      return;
+    }
+
+    const allTagStrings = [...currentTags.map((t) => t.tag), ...uniqueNewTags];
 
     // Create optimistic tags with negative IDs
     const optimisticNewTags = allTagStrings.map((tag, index) => ({
@@ -236,7 +247,7 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
             {tag.tag}
             <button
               type="button"
-              onClick={(e) => {
+              onMouseDown={(e) => {
                 e.stopPropagation();
 
                 removeTag(tag);

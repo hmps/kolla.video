@@ -13,6 +13,7 @@ import {
   RotateCcw,
   RotateCw,
   Upload,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -138,6 +139,14 @@ export default function EventDetailPage({
     }),
   );
 
+  const deleteTag = useMutation(
+    trpc.clips.deleteTag.mutationOptions({
+      onSuccess: () => {
+        refetchClips();
+      },
+    }),
+  );
+
   const updateName = useMutation(
     trpc.clips.updateName.mutationOptions({
       onSuccess: () => {
@@ -202,8 +211,18 @@ export default function EventDetailPage({
       return;
     }
 
-    const existingTags = selectedClip?.tags?.map((t) => t.tag) ?? [];
-    const allTags = [...existingTags, ...newTags];
+    const existingTagStrings = new Set(selectedClip?.tags?.map((t) => t.tag) ?? []);
+
+    // Filter out duplicates - only add tags that don't already exist
+    const uniqueNewTags = newTags.filter((tag) => !existingTagStrings.has(tag));
+
+    if (uniqueNewTags.length === 0) {
+      setIsTagDialogOpen(false);
+      setTagInput("");
+      return;
+    }
+
+    const allTags = [...(selectedClip?.tags?.map((t) => t.tag) ?? []), ...uniqueNewTags];
 
     setTags.mutate({
       teamId: teamIdNum,
@@ -214,6 +233,19 @@ export default function EventDetailPage({
     setIsTagDialogOpen(false);
     setTagInput("");
   }, [selectedClipId, selectedClip, tagInput, teamIdNum, setTags]);
+
+  const handleDeleteTag = useCallback(
+    (tagId: number) => {
+      if (!selectedClipId) return;
+
+      deleteTag.mutate({
+        teamId: teamIdNum,
+        clipId: selectedClipId,
+        tagId,
+      });
+    },
+    [selectedClipId, teamIdNum, deleteTag],
+  );
 
   const handleRename = useCallback(() => {
     if (!selectedClipId || !nameInput.trim()) {
@@ -879,8 +911,21 @@ export default function EventDetailPage({
                 <p className="text-sm font-medium mb-2">Current tags:</p>
                 <div className="flex flex-wrap gap-1">
                   {selectedClip.tags.map((tag) => (
-                    <Badge key={tag.id} variant="outline">
+                    <Badge
+                      key={tag.id}
+                      variant="outline"
+                      className="flex items-center gap-1"
+                    >
                       {tag.tag}
+                      {team?.role === "coach" && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTag(tag.id)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
                     </Badge>
                   ))}
                 </div>

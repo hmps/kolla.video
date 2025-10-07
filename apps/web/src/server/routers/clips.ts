@@ -211,16 +211,64 @@ export const clipsRouter = router({
 
       // Get existing tags
       const existingTags = new Set(clip.tags.map((t) => t.tag));
+      const newTags = new Set(input.tags);
 
-      // Filter out duplicate tags (case-sensitive)
-      const uniqueNewTags = input.tags.filter((tag) => !existingTags.has(tag));
+      // Find tags to delete (in existing but not in new)
+      const tagsToDelete = clip.tags.filter((t) => !newTags.has(t.tag));
 
-      // Insert only new unique tags
-      if (uniqueNewTags.length > 0) {
+      // Find tags to add (in new but not in existing)
+      const tagsToAdd = input.tags.filter((tag) => !existingTags.has(tag));
+
+      // Delete removed tags
+      if (tagsToDelete.length > 0) {
+        // Delete each tag individually
+        for (const tag of tagsToDelete) {
+          await db.delete(clipTags).where(eq(clipTags.id, tag.id));
+        }
+      }
+
+      // Insert new tags
+      if (tagsToAdd.length > 0) {
         await db
           .insert(clipTags)
-          .values(uniqueNewTags.map((tag) => ({ clipId: input.clipId, tag })));
+          .values(tagsToAdd.map((tag) => ({ clipId: input.clipId, tag })));
       }
+
+      return { success: true };
+    }),
+
+  deleteTag: teamProcedure
+    .input(
+      z.object({
+        teamId: z.number(),
+        clipId: z.number(),
+        tagId: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify user is a coach
+      if (ctx.membership.role !== "coach") {
+        throw new Error("Only coaches can delete tags");
+      }
+
+      // Verify clip belongs to team
+      const clip = await db.query.clips.findFirst({
+        where: and(eq(clips.id, input.clipId), eq(clips.teamId, input.teamId)),
+      });
+
+      if (!clip) {
+        throw new Error("Clip not found");
+      }
+
+      // Delete the tag
+      await db
+        .delete(clipTags)
+        .where(
+          and(
+            eq(clipTags.id, input.tagId),
+            eq(clipTags.clipId, input.clipId),
+          ),
+        );
 
       return { success: true };
     }),
