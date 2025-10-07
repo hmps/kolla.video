@@ -4,6 +4,7 @@ import {
   MediaPlayer,
   type MediaPlayerInstance,
   MediaProvider,
+  Title,
 } from "@vidstack/react";
 import "@vidstack/react/player/styles/default/theme.css";
 import "@vidstack/react/player/styles/default/layouts/video.css";
@@ -31,6 +32,8 @@ interface VidstackPlayerProps {
   loop?: boolean;
   onNextClip?: () => void;
   onPreviousClip?: () => void;
+  title?: string;
+  tags?: string[];
 }
 
 export interface VidstackPlayerRef {
@@ -55,6 +58,8 @@ export const VidstackPlayer = memo(
       loop = true,
       onNextClip,
       onPreviousClip,
+      title,
+      tags,
     },
     ref,
   ) {
@@ -125,17 +130,24 @@ export const VidstackPlayer = memo(
       };
     }, [onTimeUpdate, onEnded, onPlay, onPause]);
 
+    const displayTitle = title
+      ? tags && tags.length > 0
+        ? `${title} • ${tags.map((tag) => `#${tag}`).join(", ")}`
+        : title
+      : undefined;
+
     return (
       <MediaPlayer
         ref={playerRef}
         src={src}
         poster={poster}
-        autoplay={autoplay}
+        autoPlay={autoplay}
         muted={muted}
         loop={loop}
         playsInline
         className="aspect-video"
         keyDisabled
+        title={displayTitle}
       >
         <MediaProvider />
         <DefaultVideoLayout icons={defaultLayoutIcons} />
