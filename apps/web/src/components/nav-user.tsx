@@ -1,17 +1,8 @@
 "use client";
 
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  CreditCard,
-  LogOut,
-  Moon,
-  Sparkles,
-  Sun,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
 import { SignOutButton } from "@clerk/nextjs";
+import { BadgeCheck, ChevronsUpDown, LogOut, Moon, Sun } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {

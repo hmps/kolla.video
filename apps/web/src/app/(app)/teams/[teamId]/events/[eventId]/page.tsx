@@ -406,7 +406,6 @@ export default function EventDetailPage({
     seekBackward,
     seekForward,
     togglePlayPause,
-    commentSectionRef,
   ]);
 
   return (
@@ -504,9 +503,7 @@ export default function EventDetailPage({
                     onPause={handlePause}
                     onNextClip={goToNextClip}
                     onPreviousClip={goToPreviousClip}
-                    title={
-                      selectedClip.name ?? `Clip #${selectedClip.index}`
-                    }
+                    title={selectedClip.name ?? `Clip #${selectedClip.index}`}
                     tags={selectedClip.tags?.map((t) => t.tag) ?? []}
                   />
                 ) : selectedClip.storageKey ? (
@@ -521,9 +518,7 @@ export default function EventDetailPage({
                     onPause={handlePause}
                     onNextClip={goToNextClip}
                     onPreviousClip={goToPreviousClip}
-                    title={
-                      selectedClip.name ?? `Clip #${selectedClip.index}`
-                    }
+                    title={selectedClip.name ?? `Clip #${selectedClip.index}`}
                     tags={selectedClip.tags?.map((t) => t.tag) ?? []}
                   />
                 ) : (

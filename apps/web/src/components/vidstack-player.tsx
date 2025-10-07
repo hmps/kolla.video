@@ -4,7 +4,6 @@ import {
   MediaPlayer,
   type MediaPlayerInstance,
   MediaProvider,
-  Title,
 } from "@vidstack/react";
 import "@vidstack/react/player/styles/default/theme.css";
 import "@vidstack/react/player/styles/default/layouts/video.css";
@@ -56,8 +55,6 @@ export const VidstackPlayer = memo(
       autoplay = false,
       muted = true,
       loop = true,
-      onNextClip,
-      onPreviousClip,
       title,
       tags,
     },
@@ -86,7 +83,7 @@ export const VidstackPlayer = memo(
       return () => {
         player.removeEventListener("can-play", handleCanPlay);
       };
-    }, [src, autoplay]);
+    }, [autoplay]);
 
     // Handle event callbacks
     useEffect(() => {

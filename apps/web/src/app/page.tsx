@@ -96,7 +96,7 @@ const capabilities = [
   },
 ];
 
-function WaitlistCta({ variant = "light" }: { variant?: "light" | "dark" }) {
+function _WaitlistCta({ variant = "light" }: { variant?: "light" | "dark" }) {
   const isLight = variant === "light";
   return (
     <div
@@ -227,8 +227,8 @@ export default async function Home() {
               Film study that doesn't break the bank
             </h1>
             <p className="mt-8 max-w-6xl text-lg leading-relaxed text-slate-200">
-              Kolla keeps film study friendly and focused: film the game,
-              upload to Kolla, tag the moments, and share them with your squad.
+              Kolla keeps film study friendly and focused: film the game, upload
+              to Kolla, tag the moments, and share them with your squad.
             </p>
           </div>
         </section>
