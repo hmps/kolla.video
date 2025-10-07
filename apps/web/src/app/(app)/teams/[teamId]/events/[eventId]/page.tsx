@@ -13,7 +13,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CommentSection } from "@/components/comment-section";
+import {
+  CommentSection,
+  type CommentSectionRef,
+} from "@/components/comment-section";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +77,7 @@ export default function EventDetailPage({
   const [tagInput, setTagInput] = useState("");
   const mobilePlayerRef = useRef<VidstackPlayerRef>(null);
   const desktopPlayerRef = useRef<VidstackPlayerRef>(null);
+  const commentSectionRef = useRef<CommentSectionRef>(null);
 
   const trpc = useTRPC();
   const { data: team } = useQuery(
@@ -287,6 +291,13 @@ export default function EventDetailPage({
         return;
       }
 
+      // Focus comment input: c
+      if (e.key === "c") {
+        e.preventDefault();
+        commentSectionRef.current?.focusInput();
+        return;
+      }
+
       if (!clips || clips.length === 0) return;
 
       const currentIndex = clips.findIndex(
@@ -328,7 +339,14 @@ export default function EventDetailPage({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [clips, selectedClipId, seekBackward, seekForward, togglePlayPause]);
+  }, [
+    clips,
+    selectedClipId,
+    seekBackward,
+    seekForward,
+    togglePlayPause,
+    commentSectionRef,
+  ]);
 
   return (
     <>
@@ -561,6 +579,7 @@ export default function EventDetailPage({
 
               {/* Comments Section */}
               <CommentSection
+                ref={commentSectionRef}
                 teamId={teamIdNum}
                 clipId={selectedClipId}
                 isCoach={team?.role === "coach"}
@@ -682,6 +701,10 @@ export default function EventDetailPage({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Add tag</span>
                   <kbd className="px-2 py-1 bg-muted rounded text-xs">t</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Focus comment</span>
+                  <kbd className="px-2 py-1 bg-muted rounded text-xs">c</kbd>
                 </div>
               </div>
             </div>

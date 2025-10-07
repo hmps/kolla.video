@@ -3,7 +3,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ChevronRight, MessageSquare, Send } from "lucide-react";
-import { memo, useState } from "react";
+import {
+  forwardRef,
+  memo,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,35 +32,60 @@ interface CommentSectionProps {
   isCoach: boolean;
 }
 
-export const CommentSection = memo(function CommentSection({
-  teamId,
-  clipId,
-  isCoach,
-}: CommentSectionProps) {
-  const [isOpen, setIsOpen] = useState(true);
-  const [commentText, setCommentText] = useState("");
-  const [commentLevel, setCommentLevel] = useState<
-    "all" | "coaches" | "private"
-  >("coaches");
-  const [targetUserId, setTargetUserId] = useState<number | undefined>();
+export interface CommentSectionRef {
+  focusInput: () => void;
+}
 
-  const trpc = useTRPC();
+export const CommentSection = memo(
+  forwardRef<CommentSectionRef, CommentSectionProps>(
+    function CommentSection({ teamId, clipId, isCoach }, ref) {
+      const [commentText, setCommentText] = useState("");
+      const [commentLevel, setCommentLevel] = useState<
+        "all" | "coaches" | "private"
+      >("coaches");
+      const [targetUserId, setTargetUserId] = useState<number | undefined>();
+      const [shouldFocusOnOpen, setShouldFocusOnOpen] = useState(false);
+      const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const {
-    data: comments,
-    refetch: refetchComments,
-    isLoading: isLoadingComments,
-  } = useQuery(
-    trpc.comments.byClip.queryOptions(
-      {
-        teamId,
-        clipId: clipId ?? 0,
-      },
-      {
-        enabled: clipId !== null,
-      },
-    ),
-  );
+      const trpc = useTRPC();
+
+      const {
+        data: comments,
+        refetch: refetchComments,
+        isLoading: isLoadingComments,
+      } = useQuery(
+        trpc.comments.byClip.queryOptions(
+          {
+            teamId,
+            clipId: clipId ?? 0,
+          },
+          {
+            enabled: clipId !== null,
+          },
+        ),
+      );
+
+      const [isOpen, setIsOpen] = useState(
+        () => (comments && comments.length > 0) || false,
+      );
+
+      useEffect(() => {
+        if (isOpen && shouldFocusOnOpen) {
+          textareaRef.current?.focus();
+          setShouldFocusOnOpen(false);
+        }
+      }, [isOpen, shouldFocusOnOpen]);
+
+      useImperativeHandle(ref, () => ({
+        focusInput: () => {
+          if (!isOpen) {
+            setIsOpen(true);
+            setShouldFocusOnOpen(true);
+          } else {
+            textareaRef.current?.focus();
+          }
+        },
+      }));
 
   const { data: playerUsers } = useQuery(
     trpc.comments.playerUsers.queryOptions(
@@ -177,6 +209,7 @@ export const CommentSection = memo(function CommentSection({
           <div className="border-t p-4">
             <form onSubmit={handleSubmit} className="space-y-3">
               <Textarea
+                ref={textareaRef}
                 placeholder="Add a comment..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
@@ -240,4 +273,6 @@ export const CommentSection = memo(function CommentSection({
       </div>
     </Card>
   );
-});
+    },
+  ),
+);
