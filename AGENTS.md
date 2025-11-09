@@ -69,3 +69,40 @@ See `docs/plan.md` for detailed implementation plan and progress.
 **Completed**: Phase 1 foundation (Next.js, Tailwind, Clerk, tRPC, Drizzle schema, migrations, WAL mode)
 
 **Next**: RBAC middleware, Events CRUD, Roster management, S3 storage adapter
+
+
+<agent-tools>
+# Agent Tools CLI (agt)
+
+Agent Tools is a comprehensive CLI toolkit available in this environment that provides agents with enhanced capabilities for skill management, service integrations, and utility functions.
+
+Agent Tools is designed for LLM consumption with:
+- Plain text, structured output optimized for agent parsing
+- Direct access to skill repository containing development best practices
+
+## How to Use Agent Tools in Your Work
+
+1. **Discover relevant commands**: `agt --help` will list all available commands and their descriptions.
+2. Find a short description of each command below.
+
+## Available Commands
+
+### Skill Management
+The `agt skill` command helps you discover and utilize pre-built agent skills:
+
+```bash
+# Search for skills by keywords
+agt skill search [keywords...]
+
+# List all available skills
+agt skill all
+
+# Get full content of a specific skill
+agt skill get <name>
+```
+
+**Use skills to enhance your capabilities**: Skills contain proven patterns, code examples, and best practices that you can apply to solve common problems more effectively.
+
+**Recommendation**: Proactively use `agt skill search` when starting complex tasks to discover relevant skills that can guide your implementation approach.
+
+</agent-tools>
