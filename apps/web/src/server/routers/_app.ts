@@ -4,6 +4,7 @@ import { clipsRouter } from "./clips";
 import { commentsRouter } from "./comments";
 import { dashboardRouter } from "./dashboard";
 import { eventsRouter } from "./events";
+import { onboardingRouter } from "./onboarding";
 import { playersRouter } from "./players";
 import { sharesRouter } from "./shares";
 import { teamsRouter } from "./teams";
@@ -17,6 +18,7 @@ export const appRouter = router({
   comments: commentsRouter,
   shares: sharesRouter,
   dashboard: dashboardRouter,
+  onboarding: onboardingRouter,
 });
 
 export type AppRouter = typeof appRouter;
