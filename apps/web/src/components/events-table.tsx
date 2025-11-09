@@ -102,7 +102,7 @@ export function EventsTable({
             key={event.id}
             type="button"
             className="rounded-lg w-full text-left border p-4 cursor-pointer hover:bg-accent transition-colors"
-            onKeyUp={() =>
+            onClick={() =>
               router.push(`/teams/${event.teamId}/events/${event.id}`)
             }
           >
