@@ -44,6 +44,7 @@ export async function POST(req: Request) {
 
   if (eventType === "user.created") {
     const { id, email_addresses, first_name, last_name } = evt.data;
+    console.log("[debug] evt.data", evt.data);
     const email = email_addresses[0]?.email_address;
 
     if (!email) {
