@@ -1,5 +1,11 @@
 import { sql, relations } from "drizzle-orm";
-import { sqliteTable, text, integer, real, unique } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  unique,
+} from "drizzle-orm/sqlite-core";
 
 // Users table
 export const users = sqliteTable("users", {
@@ -78,6 +84,7 @@ export const clips = sqliteTable(
       enum: ["uploaded", "processing", "ready", "failed"],
     }).notNull(),
     failReason: text("fail_reason"),
+    transcodingJobId: text("transcoding_job_id"),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),
@@ -153,11 +160,30 @@ export const shareLinks = sqliteTable("share_links", {
     .default(sql`(unixepoch())`),
 });
 
+// Onboarding progress table
+export const onboardingProgress = sqliteTable(
+  "onboarding_progress",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id),
+    key: text("key").notNull(),
+    completedAt: integer("completed_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => ({
+    userKeyUnique: unique().on(table.userId, table.key),
+  }),
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(teamMemberships),
   clips: many(clips),
   comments: many(comments),
+  onboardingProgress: many(onboardingProgress),
 }));
 
 export const teamsRelations = relations(teams, ({ many }) => ({
@@ -177,7 +203,7 @@ export const teamMembershipsRelations = relations(
       fields: [teamMemberships.userId],
       references: [users.id],
     }),
-  })
+  }),
 );
 
 export const eventsRelations = relations(events, ({ one, many }) => ({
@@ -258,3 +284,13 @@ export const shareLinksRelations = relations(shareLinks, ({ one }) => ({
     references: [events.id],
   }),
 }));
+
+export const onboardingProgressRelations = relations(
+  onboardingProgress,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [onboardingProgress.userId],
+      references: [users.id],
+    }),
+  }),
+);

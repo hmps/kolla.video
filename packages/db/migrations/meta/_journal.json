@@ -50,6 +50,20 @@
       "when": 1759739765874,
       "tag": "0006_blushing_scarlet_witch",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1759856701234,
+      "tag": "0007_classy_ultimatum",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1762691401681,
+      "tag": "0008_lonely_namorita",
+      "breakpoints": true
     }
   ]
 }

@@ -178,8 +178,12 @@ export const clipsRouter = router({
         .set({ status: "processing" })
         .where(eq(clips.id, input.clipId));
 
-      // TODO: Post job to worker
-      // For now, just return success
+      // Submit to transcoding service
+      const { transcodingService } = await import(
+        "../../lib/transcoding/service"
+      );
+      await transcodingService.submitClip(input.clipId);
+
       return { success: true };
     }),
 
@@ -264,10 +268,7 @@ export const clipsRouter = router({
       await db
         .delete(clipTags)
         .where(
-          and(
-            eq(clipTags.id, input.tagId),
-            eq(clipTags.clipId, input.clipId),
-          ),
+          and(eq(clipTags.id, input.tagId), eq(clipTags.clipId, input.clipId)),
         );
 
       return { success: true };
@@ -354,7 +355,7 @@ export const clipsRouter = router({
         height: z.number().int().positive().optional(),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       console.log("[debug] input", input);
       // Verify clip belongs to team
       const clip = await db.query.clips.findFirst({
