@@ -22,6 +22,7 @@ import {
   type CommentSectionRef,
 } from "@/components/comment-section";
 import { EditEventDialog } from "@/components/edit-event-dialog";
+import { OnboardingDialog } from "@/components/onboarding-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,6 +90,7 @@ export default function EventDetailPage({
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [isEditEventDialogOpen, setIsEditEventDialogOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const mobilePlayerRef = useRef<VidstackPlayerRef>(null);
   const desktopPlayerRef = useRef<VidstackPlayerRef>(null);
   const commentSectionRef = useRef<CommentSectionRef>(null);
@@ -114,6 +116,14 @@ export default function EventDetailPage({
     }),
   );
 
+  const { data: onboardingProgress } = useQuery(
+    trpc.onboarding.getProgress.queryOptions(),
+  );
+
+  const markOnboardingComplete = useMutation(
+    trpc.onboarding.markComplete.mutationOptions(),
+  );
+
   // Load first clip on mount with autoplay
   useEffect(() => {
     if (clips && clips.length > 0 && selectedClipId === null) {
@@ -121,6 +131,20 @@ export default function EventDetailPage({
       setShouldAutoplay(true);
     }
   }, [clips, selectedClipId]);
+
+  // Show onboarding if not completed
+  useEffect(() => {
+    if (onboardingProgress && !onboardingProgress.event_player_page) {
+      // Delay showing onboarding slightly to let the page load
+      const timer = setTimeout(() => setIsOnboardingOpen(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [onboardingProgress]);
+
+  const handleOnboardingComplete = useCallback(() => {
+    setIsOnboardingOpen(false);
+    markOnboardingComplete.mutate({ key: "event_player_page" });
+  }, [markOnboardingComplete]);
 
   const deleteClips = useMutation(
     trpc.clips.delete.mutationOptions({
@@ -211,7 +235,9 @@ export default function EventDetailPage({
       return;
     }
 
-    const existingTagStrings = new Set(selectedClip?.tags?.map((t) => t.tag) ?? []);
+    const existingTagStrings = new Set(
+      selectedClip?.tags?.map((t) => t.tag) ?? [],
+    );
 
     // Filter out duplicates - only add tags that don't already exist
     const uniqueNewTags = newTags.filter((tag) => !existingTagStrings.has(tag));
@@ -222,7 +248,10 @@ export default function EventDetailPage({
       return;
     }
 
-    const allTags = [...(selectedClip?.tags?.map((t) => t.tag) ?? []), ...uniqueNewTags];
+    const allTags = [
+      ...(selectedClip?.tags?.map((t) => t.tag) ?? []),
+      ...uniqueNewTags,
+    ];
 
     setTags.mutate({
       teamId: teamIdNum,
@@ -1012,6 +1041,11 @@ export default function EventDetailPage({
           hideTrigger={true}
         />
       )}
+
+      <OnboardingDialog
+        open={isOnboardingOpen}
+        onComplete={handleOnboardingComplete}
+      />
     </>
   );
 }
