@@ -243,13 +243,7 @@ export function LandingPage() {
               kolla
             </span>
           </Link>
-          <nav className="flex items-center gap-6">
-            <Link
-              href="https://github.com/hmps/kolla.video"
-              className="text-sm text-slate-600 transition-all duration-300 hover:text-slate-900 hover:-translate-y-0.5"
-            >
-              GitHub
-            </Link>
+          <nav>
             <Link
               href="/sign-in"
               className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-slate-800 hover:-translate-y-0.5"
