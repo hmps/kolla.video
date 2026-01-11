@@ -1,75 +1,25 @@
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { db, users } from "@kolla/db";
+import { auth } from "@/lib/auth";
+import { db } from "@kolla/db";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { cache } from "react";
 import "server-only";
 import { s3Client } from "@/lib/s3";
 
 export const createContext = cache(async () => {
-  const { userId } = await auth();
-  console.log("[tRPC Context] Clerk userId:", userId);
+  // Get session from Better Auth
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  let dbUser = null;
-  if (userId) {
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.clerkUserId, userId),
-    });
-
-    if (existingUser) {
-      dbUser = existingUser;
-      console.log("[tRPC Context] DB user found:", {
-        id: dbUser.id,
-        email: dbUser.email,
-      });
-    } else {
-      console.warn(
-        "[tRPC Context] Clerk user authenticated but NO DB user found for userId:",
-        userId,
-      );
-
-      // Fallback: Auto-create user from Clerk data if webhook missed
-      try {
-        console.log(
-          "[tRPC Context] Attempting to fetch user from Clerk API and create DB record...",
-        );
-        const client = await clerkClient();
-        const clerkUser = await client.users.getUser(userId);
-        const email = clerkUser.emailAddresses[0]?.emailAddress;
-
-        if (!email) {
-          console.error(
-            "[tRPC Context] No email found for Clerk user:",
-            userId,
-          );
-        } else {
-          const [newUser] = await db
-            .insert(users)
-            .values({
-              clerkUserId: userId,
-              email,
-              firstName: clerkUser.firstName,
-              lastName: clerkUser.lastName,
-            })
-            .returning();
-
-          dbUser = newUser;
-          console.log("[tRPC Context] Successfully auto-created DB user:", {
-            id: newUser.id,
-            email: newUser.email,
-          });
-        }
-      } catch (error) {
-        console.error("[tRPC Context] Failed to auto-create user:", error);
-      }
-    }
-  } else {
-    console.log("[tRPC Context] No Clerk userId (unauthenticated request)");
-  }
+  console.log(
+    "[tRPC Context] Session:",
+    session ? { userId: session.user.id, email: session.user.email } : null
+  );
 
   return {
-    clerkUserId: userId,
-    user: dbUser,
+    session,
+    user: session?.user ?? null,
     s3: s3Client,
   };
 });
@@ -82,17 +32,16 @@ export const publicProcedure = t.procedure;
 
 // Middleware to ensure user is authenticated
 const isAuthed = t.middleware(async ({ ctx, next }) => {
-  if (!ctx.clerkUserId || !ctx.user) {
+  if (!ctx.session || !ctx.user) {
     console.error("[isAuthed Middleware] UNAUTHORIZED:", {
-      hasClerkUserId: !!ctx.clerkUserId,
-      hasDbUser: !!ctx.user,
-      clerkUserId: ctx.clerkUserId || "none",
+      hasSession: !!ctx.session,
+      hasUser: !!ctx.user,
     });
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
     ctx: {
-      clerkUserId: ctx.clerkUserId,
+      session: ctx.session,
       user: ctx.user,
     },
   });
@@ -128,7 +77,7 @@ const isTeamMember = t.middleware(async ({ ctx, getRawInput, next }) => {
 
   return next({
     ctx: {
-      clerkUserId: ctx.clerkUserId,
+      session: ctx.session,
       user: ctx.user,
       membership,
     },
@@ -165,7 +114,7 @@ const isCoach = t.middleware(async ({ ctx, getRawInput, next }) => {
 
   return next({
     ctx: {
-      clerkUserId: ctx.clerkUserId,
+      session: ctx.session,
       user: ctx.user,
       membership,
     },

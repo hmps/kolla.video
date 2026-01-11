@@ -1,19 +1,47 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/share(.*)",
-  "/upload(.*)",
-  "/api/trpc/uploadLinks(.*)",
-  "/api/trpc/shares(.*)",
-  "/api/trpc/playlists.getViaToken(.*)",
-]);
+// Routes that don't require authentication
+const publicPatterns = [
+  /^\/$/,
+  /^\/sign-in/,
+  /^\/sign-up/,
+  /^\/forgot-password/,
+  /^\/reset-password/,
+  /^\/share\//,
+  /^\/upload\//,
+  /^\/api\/auth\//,
+  /^\/api\/trpc\/uploadLinks/,
+  /^\/api\/trpc\/shares/,
+  /^\/api\/trpc\/playlists\.getViaToken/,
+];
 
-export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
-    await auth.protect();
+function isPublicRoute(pathname: string): boolean {
+  return publicPatterns.some((pattern) => pattern.test(pathname));
+}
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Allow public routes
+  if (isPublicRoute(pathname)) {
+    return NextResponse.next();
   }
-});
+
+  // Check for session cookie (optimistic check)
+  // Note: This only checks cookie existence, not validity
+  // Actual validation happens in page/API handlers via Better Auth
+  const sessionCookie = request.cookies.get("better-auth.session_token");
+
+  if (!sessionCookie) {
+    // Redirect to sign-in page
+    const signInUrl = new URL("/sign-in", request.url);
+    signInUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [

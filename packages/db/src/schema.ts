@@ -7,14 +7,73 @@ import {
   unique,
 } from "drizzle-orm/sqlite-core";
 
-// Users table
+// Users table (Better Auth compatible)
 export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  clerkUserId: text("clerk_user_id").notNull().unique(),
-  email: text("email").notNull(),
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  emailVerified: integer("email_verified", { mode: "boolean" }).default(false),
+  name: text("name"),
+  image: text("image"),
   firstName: text("first_name"),
   lastName: text("last_name"),
   createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+// Sessions table (Better Auth)
+export const sessions = sqliteTable("sessions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+// Accounts table (Better Auth)
+export const accounts = sqliteTable("accounts", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp" }),
+  refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp" }),
+  scope: text("scope"),
+  password: text("password"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+// Verifications table (Better Auth)
+export const verifications = sqliteTable("verifications", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
 });
@@ -34,7 +93,7 @@ export const teamMemberships = sqliteTable("team_memberships", {
   teamId: integer("team_id")
     .notNull()
     .references(() => teams.id),
-  userId: integer("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id),
   role: text("role", { enum: ["coach", "player"] }).notNull(),
@@ -70,7 +129,7 @@ export const clips = sqliteTable(
     eventId: integer("event_id")
       .notNull()
       .references(() => events.id),
-    uploaderId: integer("uploader_id").references(() => users.id),
+    uploaderId: text("uploader_id").references(() => users.id),
     uploaderName: text("uploader_name"),
     index: integer("index").notNull(),
     name: text("name"),
@@ -134,14 +193,14 @@ export const comments = sqliteTable("comments", {
   clipId: integer("clip_id")
     .notNull()
     .references(() => clips.id),
-  authorId: integer("author_id")
+  authorId: text("author_id")
     .notNull()
     .references(() => users.id),
   body: text("body").notNull(),
   level: text("level", { enum: ["all", "coaches", "private"] })
     .notNull()
     .default("coaches"),
-  targetUserId: integer("target_user_id").references(() => users.id),
+  targetUserId: text("target_user_id").references(() => users.id),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -175,7 +234,7 @@ export const uploadLinks = sqliteTable("upload_links", {
     .references(() => events.id),
   token: text("token").notNull().unique(),
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
-  createdById: integer("created_by_id")
+  createdById: text("created_by_id")
     .notNull()
     .references(() => users.id),
   createdAt: integer("created_at", { mode: "timestamp" })
@@ -188,7 +247,7 @@ export const onboardingProgress = sqliteTable(
   "onboarding_progress",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    userId: integer("user_id")
+    userId: text("user_id")
       .notNull()
       .references(() => users.id),
     key: text("key").notNull(),
@@ -215,7 +274,7 @@ export const segments = sqliteTable(
     clipId: integer("clip_id")
       .notNull()
       .references(() => clips.id, { onDelete: "cascade" }),
-    creatorId: integer("creator_id")
+    creatorId: text("creator_id")
       .notNull()
       .references(() => users.id),
     index: integer("index").notNull(),
@@ -256,14 +315,14 @@ export const segmentComments = sqliteTable("segment_comments", {
   segmentId: integer("segment_id")
     .notNull()
     .references(() => segments.id, { onDelete: "cascade" }),
-  authorId: integer("author_id")
+  authorId: text("author_id")
     .notNull()
     .references(() => users.id),
   body: text("body").notNull(),
   level: text("level", { enum: ["all", "coaches", "private"] })
     .notNull()
     .default("coaches"),
-  targetUserId: integer("target_user_id").references(() => users.id),
+  targetUserId: text("target_user_id").references(() => users.id),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -276,6 +335,23 @@ export const usersRelations = relations(users, ({ many }) => ({
   comments: many(comments),
   onboardingProgress: many(onboardingProgress),
   playlists: many(playlists),
+  sessions: many(sessions),
+  accounts: many(accounts),
+}));
+
+// Better Auth relations
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, {
+    fields: [accounts.userId],
+    references: [users.id],
+  }),
 }));
 
 export const teamsRelations = relations(teams, ({ many }) => ({
@@ -470,7 +546,7 @@ export const playlists = sqliteTable("playlists", {
   teamId: integer("team_id")
     .notNull()
     .references(() => teams.id),
-  creatorId: integer("creator_id")
+  creatorId: text("creator_id")
     .notNull()
     .references(() => users.id),
   name: text("name").notNull(),

@@ -1,38 +1,31 @@
-import { auth } from "@clerk/nextjs/server";
-import { db, users } from "@kolla/db";
-import { eq } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
 
     const debugInfo = {
-      clerk: {
-        authenticated: !!userId,
-        userId: userId || null,
+      session: {
+        authenticated: !!session,
+        userId: session?.user.id || null,
+        email: session?.user.email || null,
       },
-      database: {
-        user: null as null | Record<string, unknown>,
-      },
+      user: session?.user
+        ? {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+            firstName: session.user.firstName,
+            lastName: session.user.lastName,
+            emailVerified: session.user.emailVerified,
+          }
+        : null,
       timestamp: new Date().toISOString(),
     };
-
-    if (userId) {
-      const dbUser = await db.query.users.findFirst({
-        where: eq(users.clerkUserId, userId),
-      });
-
-      debugInfo.database.user = dbUser
-        ? {
-            id: dbUser.id,
-            email: dbUser.email,
-            firstName: dbUser.firstName,
-            lastName: dbUser.lastName,
-            createdAt: dbUser.createdAt,
-          }
-        : null;
-    }
 
     return NextResponse.json(debugInfo);
   } catch (error) {

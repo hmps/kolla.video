@@ -4,9 +4,12 @@ const serverEnvSchema = z.object({
   // Database
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 
-  // Clerk Authentication
-  CLERK_SECRET_KEY: z.string().min(1, "CLERK_SECRET_KEY is required"),
-  CLERK_WEBHOOK_SECRET: z.string().min(1, "CLERK_WEBHOOK_SECRET is required"),
+  // Better Auth
+  BETTER_AUTH_SECRET: z.string().min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
+  BETTER_AUTH_URL: z.string().url("BETTER_AUTH_URL must be a valid URL"),
+
+  // Postmark Email
+  POSTMARK_API_KEY: z.string().min(1, "POSTMARK_API_KEY is required"),
 
   JOB_SHARED_SECRET: z.string().min(1, "JOB_SHARED_SECRET is required"),
 

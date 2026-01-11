@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useSession } from "@/lib/auth-client";
 import { Calendar, Home, ListVideo, Users, Video } from "lucide-react";
 import type * as React from "react";
 
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useUser();
+  const { data: session, isPending } = useSession();
 
   const navMain = [
     {
@@ -65,13 +65,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser
-          user={{
-            name: user?.fullName || user?.firstName || "User",
-            email: user?.primaryEmailAddress?.emailAddress || "",
-            avatar: user?.imageUrl || undefined,
-          }}
-        />
+        {!isPending && session?.user && (
+          <NavUser
+            user={{
+              name: session.user.name || session.user.firstName || "User",
+              email: session.user.email,
+              avatar: session.user.image || undefined,
+            }}
+          />
+        )}
       </SidebarFooter>
     </Sidebar>
   );

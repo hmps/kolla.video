@@ -1,6 +1,6 @@
 # tRPC Setup
 
-**⚠️ Important**: This project uses `@trpc/tanstack-react-query` (the new recommended approach), **NOT** the deprecated `@trpc/react-query`.
+**Important**: This project uses `@trpc/tanstack-react-query` (the new recommended approach), **NOT** the deprecated `@trpc/react-query`.
 
 ## Dependencies
 
@@ -20,26 +20,18 @@
 ```typescript
 import { initTRPC, TRPCError } from "@trpc/server";
 import { cache } from "react";
-import { auth } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
-import { db, users, teamMemberships } from "@kolla/db";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { db } from "@kolla/db";
 
 export const createContext = cache(async () => {
-  const { userId } = await auth();
-
-  let dbUser = null;
-  if (userId) {
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.clerkUserId, userId),
-    });
-    if (existingUser) {
-      dbUser = existingUser;
-    }
-  }
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   return {
-    clerkUserId: userId,
-    user: dbUser,
+    session,
+    user: session?.user ?? null,
   };
 });
 
@@ -47,12 +39,12 @@ const t = initTRPC.context<typeof createContext>().create();
 
 // Middleware to ensure user is authenticated
 const isAuthed = t.middleware(async ({ ctx, next }) => {
-  if (!ctx.clerkUserId || !ctx.user) {
+  if (!ctx.session || !ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
     ctx: {
-      clerkUserId: ctx.clerkUserId,
+      session: ctx.session,
       user: ctx.user,
     },
   });
@@ -175,7 +167,7 @@ const createTeam = useMutation(
 
 ## Migration from Classic React Client
 
-### Old Pattern (❌ @trpc/react-query)
+### Old Pattern (@trpc/react-query)
 
 ```typescript
 import { trpc } from "@/trpc/client"
@@ -184,7 +176,7 @@ const data = trpc.hello.useQuery({ name: "World" })
 const mutation = trpc.createUser.useMutation()
 ```
 
-### New Pattern (✅ @trpc/tanstack-react-query)
+### New Pattern (@trpc/tanstack-react-query)
 
 ```typescript
 import { useTRPC } from "@/trpc/client"

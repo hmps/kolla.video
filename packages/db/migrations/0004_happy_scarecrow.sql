@@ -1,1 +1,0 @@
-ALTER TABLE `clips` ADD `name` text;

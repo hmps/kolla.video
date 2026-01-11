@@ -1,1 +1,0 @@
-ALTER TABLE `clips` ADD `transcoding_job_id` text;

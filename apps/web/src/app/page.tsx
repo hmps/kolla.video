@@ -1,6 +1,6 @@
-import { SignInButton } from "@clerk/nextjs";
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
 import { ArrowRight, Video } from "lucide-react";
+import { headers } from "next/headers";
 import { Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -174,9 +174,11 @@ function _WaitlistCta({ variant = "light" }: { variant?: "light" | "dark" }) {
 }
 
 export default async function Home() {
-  const { userId } = await auth();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  if (userId) {
+  if (session) {
     redirect("/dashboard");
   }
 
@@ -207,11 +209,12 @@ export default async function Home() {
             >
               <Link href="https://github.com/hmps/kolla.video">GitHub</Link>
             </Button>
-            <SignInButton mode="modal">
-              <Button className="rounded-full border border-slate-900 bg-slate-900 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-100 hover:bg-slate-800">
-                Sign In
-              </Button>
-            </SignInButton>
+            <Button
+              asChild
+              className="rounded-full border border-slate-900 bg-slate-900 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-100 hover:bg-slate-800"
+            >
+              <Link href="/sign-in">Sign In</Link>
+            </Button>
           </div>
         </div>
       </header>
