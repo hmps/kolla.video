@@ -1,5 +1,4 @@
-import { db, teamMemberships, teams, users } from "@kolla/db";
-import { count, eq } from "drizzle-orm";
+import { count, db, eq, teamMemberships, teams, users } from "@kolla/db";
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 
@@ -206,7 +205,7 @@ export const teamsRouter = router({
     .input(
       z.object({
         teamId: z.number(),
-        userIds: z.array(z.number()),
+        userIds: z.array(z.string()),
         role: z.enum(["coach", "player"]).default("player"),
       }),
     )

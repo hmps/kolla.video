@@ -1,12 +1,14 @@
 import {
+  and,
   clips,
   comments,
   db,
+  eq,
+  or,
   segmentComments,
   segments,
   teamMemberships,
 } from "@kolla/db";
-import { and, eq, or } from "drizzle-orm";
 import { z } from "zod";
 import { router, teamProcedure } from "../trpc";
 
@@ -80,7 +82,7 @@ export const commentsRouter = router({
         clipId: z.number(),
         body: z.string().min(1),
         level: z.enum(["all", "coaches", "private"]).default("coaches"),
-        targetUserId: z.number().optional(),
+        targetUserId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -198,7 +200,7 @@ export const commentsRouter = router({
         segmentId: z.number(),
         body: z.string().min(1),
         level: z.enum(["all", "coaches", "private"]).default("coaches"),
-        targetUserId: z.number().optional(),
+        targetUserId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

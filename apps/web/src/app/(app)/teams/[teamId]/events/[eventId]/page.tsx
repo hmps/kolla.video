@@ -444,8 +444,9 @@ export default function EventDetailPage({
       return;
     }
 
+    const mediaTags = (selectedMedia as { tags?: Array<{ tag: string }> })?.tags;
     const existingTagStrings = new Set(
-      selectedMedia?.tags?.map((t) => t.tag) ?? [],
+      mediaTags?.map((t) => t.tag) ?? [],
     );
 
     // Filter out duplicates - only add tags that don't already exist
@@ -458,7 +459,7 @@ export default function EventDetailPage({
     }
 
     const allTags = [
-      ...(selectedMedia?.tags?.map((t) => t.tag) ?? []),
+      ...(mediaTags?.map((t) => t.tag) ?? []),
       ...uniqueNewTags,
     ];
 
@@ -858,7 +859,16 @@ export default function EventDetailPage({
                 (() => {
                   // Determine video source and status based on item type
                   const isSegment = selectedMedia.type === "segment";
-                  const sourceClip = isSegment ? selectedMedia.clip : selectedMedia;
+                  const mediaWithRelations = selectedMedia as {
+                    clip?: { status?: string; hlsPrefix?: string | null; storageKey?: string };
+                    tags?: Array<{ tag: string }>;
+                    startS?: number;
+                    endS?: number;
+                    status?: string;
+                    hlsPrefix?: string | null;
+                    storageKey?: string;
+                  };
+                  const sourceClip = isSegment ? mediaWithRelations.clip : mediaWithRelations;
                   const status = sourceClip?.status;
                   const hlsPrefix = sourceClip?.hlsPrefix;
                   const storageKey = sourceClip?.storageKey;
@@ -884,9 +894,9 @@ export default function EventDetailPage({
                         onNextClip={goToNextItem}
                         onPreviousClip={goToPreviousItem}
                         title={displayName}
-                        tags={selectedMedia.tags?.map((t) => t.tag) ?? []}
-                        segmentStart={isSegment ? selectedMedia.startS : undefined}
-                        segmentEnd={isSegment ? selectedMedia.endS : undefined}
+                        tags={mediaWithRelations.tags?.map((t) => t.tag) ?? []}
+                        segmentStart={isSegment ? mediaWithRelations.startS : undefined}
+                        segmentEnd={isSegment ? mediaWithRelations.endS : undefined}
                       />
                     );
                   }
@@ -906,9 +916,9 @@ export default function EventDetailPage({
                         onNextClip={goToNextItem}
                         onPreviousClip={goToPreviousItem}
                         title={displayName}
-                        tags={selectedMedia.tags?.map((t) => t.tag) ?? []}
-                        segmentStart={isSegment ? selectedMedia.startS : undefined}
-                        segmentEnd={isSegment ? selectedMedia.endS : undefined}
+                        tags={mediaWithRelations.tags?.map((t) => t.tag) ?? []}
+                        segmentStart={isSegment ? mediaWithRelations.startS : undefined}
+                        segmentEnd={isSegment ? mediaWithRelations.endS : undefined}
                       />
                     );
                   }
@@ -1016,7 +1026,16 @@ export default function EventDetailPage({
                       (() => {
                         // Determine video source and status based on item type
                         const isSegment = selectedMedia.type === "segment";
-                        const sourceClip = isSegment ? selectedMedia.clip : selectedMedia;
+                        const mediaWithRelations = selectedMedia as {
+                          clip?: { status?: string; hlsPrefix?: string | null; storageKey?: string };
+                          tags?: Array<{ tag: string }>;
+                          startS?: number;
+                          endS?: number;
+                          status?: string;
+                          hlsPrefix?: string | null;
+                          storageKey?: string;
+                        };
+                        const sourceClip = isSegment ? mediaWithRelations.clip : mediaWithRelations;
                         const status = sourceClip?.status;
                         const hlsPrefix = sourceClip?.hlsPrefix;
                         const storageKey = sourceClip?.storageKey;
@@ -1042,9 +1061,9 @@ export default function EventDetailPage({
                               onNextClip={goToNextItem}
                               onPreviousClip={goToPreviousItem}
                               title={displayName}
-                              tags={selectedMedia.tags?.map((t) => t.tag) ?? []}
-                              segmentStart={isSegment ? selectedMedia.startS : undefined}
-                              segmentEnd={isSegment ? selectedMedia.endS : undefined}
+                              tags={mediaWithRelations.tags?.map((t) => t.tag) ?? []}
+                              segmentStart={isSegment ? mediaWithRelations.startS : undefined}
+                              segmentEnd={isSegment ? mediaWithRelations.endS : undefined}
                             />
                           );
                         }
@@ -1064,9 +1083,9 @@ export default function EventDetailPage({
                               onNextClip={goToNextItem}
                               onPreviousClip={goToPreviousItem}
                               title={displayName}
-                              tags={selectedMedia.tags?.map((t) => t.tag) ?? []}
-                              segmentStart={isSegment ? selectedMedia.startS : undefined}
-                              segmentEnd={isSegment ? selectedMedia.endS : undefined}
+                              tags={mediaWithRelations.tags?.map((t) => t.tag) ?? []}
+                              segmentStart={isSegment ? mediaWithRelations.startS : undefined}
+                              segmentEnd={isSegment ? mediaWithRelations.endS : undefined}
                             />
                           );
                         }
@@ -1320,31 +1339,34 @@ export default function EventDetailPage({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {selectedMedia?.tags && selectedMedia.tags.length > 0 && (
-              <div>
-                <p className="text-sm font-medium mb-2">Current tags:</p>
-                <div className="flex flex-wrap gap-1">
-                  {selectedMedia.tags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant="outline"
-                      className="flex items-center gap-1"
-                    >
-                      {tag.tag}
-                      {team?.role === "coach" && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteTag(tag.id)}
-                          className="ml-1 hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      )}
-                    </Badge>
-                  ))}
+            {(() => {
+              const tags = (selectedMedia as { tags?: Array<{ id: number; tag: string }> })?.tags;
+              return tags && tags.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Current tags:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {tags.map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        variant="outline"
+                        className="flex items-center gap-1"
+                      >
+                        {tag.tag}
+                        {team?.role === "coach" && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTag(tag.id)}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
             <Input
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}

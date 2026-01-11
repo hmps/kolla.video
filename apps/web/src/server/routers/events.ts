@@ -1,42 +1,55 @@
-import { clips, db, events, teamMemberships } from "@kolla/db";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, clips, db, desc, eq, events, inArray, sql, teamMemberships } from "@kolla/db";
 import { z } from "zod";
 import { protectedProcedure, router, teamProcedure } from "../trpc";
 
+const eventWithClipCountSchema = z.object({
+  id: z.number(),
+  teamId: z.number(),
+  type: z.enum(["game", "practice"]),
+  title: z.string(),
+  date: z.coerce.date(),
+  venue: z.string().nullable(),
+  notes: z.string().nullable(),
+  createdAt: z.coerce.date(),
+  clipCount: z.number(),
+});
+
 export const eventsRouter = router({
-  listAll: protectedProcedure.query(async ({ ctx }) => {
-    // Get all teams the user is a member of
-    const memberships = await db.query.teamMemberships.findMany({
-      where: eq(teamMemberships.userId, ctx.user.id),
-    });
+  listAll: protectedProcedure
+    .output(z.array(eventWithClipCountSchema))
+    .query(async ({ ctx }) => {
+      // Get all teams the user is a member of
+      const memberships = await db.query.teamMemberships.findMany({
+        where: eq(teamMemberships.userId, ctx.user.id),
+      });
 
-    const teamIds = memberships.map((m) => m.teamId);
+      const teamIds = memberships.map((m) => m.teamId);
 
-    if (teamIds.length === 0) {
-      return [];
-    }
+      if (teamIds.length === 0) {
+        return [];
+      }
 
-    // Get all events from those teams with clip counts
-    const allEvents = await db
-      .select({
-        id: events.id,
-        teamId: events.teamId,
-        type: events.type,
-        title: events.title,
-        date: events.date,
-        venue: events.venue,
-        notes: events.notes,
-        createdAt: events.createdAt,
-        clipCount: sql<number>`count(${clips.id})`.as("clip_count"),
-      })
-      .from(events)
-      .leftJoin(clips, eq(clips.eventId, events.id))
-      .where(inArray(events.teamId, teamIds))
-      .groupBy(events.id)
-      .orderBy(desc(events.date));
+      // Get all events from those teams with clip counts
+      const allEvents = await db
+        .select({
+          id: events.id,
+          teamId: events.teamId,
+          type: events.type,
+          title: events.title,
+          date: events.date,
+          venue: events.venue,
+          notes: events.notes,
+          createdAt: events.createdAt,
+          clipCount: sql<number>`count(${clips.id})`.as("clip_count"),
+        })
+        .from(events)
+        .leftJoin(clips, eq(clips.eventId, events.id))
+        .where(inArray(events.teamId, teamIds))
+        .groupBy(events.id)
+        .orderBy(desc(events.date));
 
-    return allEvents;
-  }),
+      return allEvents;
+    }),
 
   list: teamProcedure
     .input(z.object({ teamId: z.number() }))

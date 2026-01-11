@@ -226,7 +226,7 @@ export default function PlaylistDetailPage({
     }),
   );
 
-  const items = playlist?.items ?? [];
+  const items = (playlist as { items?: PlaylistItem[] } | undefined)?.items ?? [];
   const selectedItem = selectedItemIndex !== null ? items[selectedItemIndex] : null;
 
   // Load first item on mount

@@ -1,5 +1,4 @@
-import { db, players } from "@kolla/db";
-import { and, eq } from "drizzle-orm";
+import { and, db, eq, players } from "@kolla/db";
 import { z } from "zod";
 import { router, teamProcedure } from "../trpc";
 

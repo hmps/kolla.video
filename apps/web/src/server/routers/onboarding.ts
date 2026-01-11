@@ -1,5 +1,4 @@
-import { db, onboardingProgress } from "@kolla/db";
-import { and, eq } from "drizzle-orm";
+import { and, db, eq, onboardingProgress } from "@kolla/db";
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 

@@ -35,7 +35,7 @@ export default function SignUpPage() {
       const result = await signUp.email({
         email: formData.email,
         password: formData.password,
-        name: `${formData.firstName} ${formData.lastName}`.trim() || undefined,
+        name: `${formData.firstName} ${formData.lastName}`.trim() || "",
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
       });

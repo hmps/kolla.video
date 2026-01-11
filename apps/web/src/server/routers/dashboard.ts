@@ -1,5 +1,4 @@
-import { db, events, teamMemberships } from "@kolla/db";
-import { desc, eq, sql } from "drizzle-orm";
+import { db, desc, eq, events, sql, teamMemberships } from "@kolla/db";
 import { protectedProcedure, router } from "../trpc";
 
 export const dashboardRouter = router({

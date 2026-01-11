@@ -43,7 +43,7 @@ export default function TeamDetailPage({
 }) {
   const { teamId } = use(params);
   const teamIdNum = Number.parseInt(teamId, 10);
-  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [selectedMembershipIds, setSelectedMembershipIds] = useState<number[]>(
     [],
   );
@@ -105,7 +105,7 @@ export default function TeamDetailPage({
     }
   };
 
-  const toggleUserSelection = (userId: number) => {
+  const toggleUserSelection = (userId: string) => {
     setSelectedUserIds((prev) =>
       prev.includes(userId)
         ? prev.filter((id) => id !== userId)

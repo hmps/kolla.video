@@ -64,7 +64,27 @@ export default function SharePage({
   const mediaItems = useMemo(() => {
     if (!data) return [];
 
-    const clips: ShareMediaItem[] = data.event.clips
+    type ClipData = {
+      id: number;
+      index: number;
+      name: string | null;
+      status: string;
+      durationS: number | null;
+      hlsPrefix: string | null;
+      storageKey: string;
+      tags: Array<{ id: number; tag: string }>;
+    };
+    type SegmentData = {
+      id: number;
+      index: number;
+      name: string | null;
+      startS: number;
+      endS: number;
+      clip: { id: number; status: string; hlsPrefix: string | null; storageKey: string };
+      tags: Array<{ id: number; tag: string }>;
+    };
+
+    const clips: ShareMediaItem[] = ((data.event as { clips?: ClipData[] }).clips ?? [])
       .filter((c) => c.status === "ready")
       .map((c) => ({
         type: "clip" as const,
@@ -78,7 +98,7 @@ export default function SharePage({
         tags: c.tags,
       }));
 
-    const segments: ShareMediaItem[] = (data.event.segments ?? [])
+    const segments: ShareMediaItem[] = ((data.event as { segments?: SegmentData[] }).segments ?? [])
       .filter((s) => s.clip.status === "ready")
       .map((s) => ({
         type: "segment" as const,

@@ -39,6 +39,27 @@ export interface CommentSectionRef {
   toggle: () => void;
 }
 
+interface CommentWithRelations {
+  id: number;
+  body: string;
+  level: "all" | "coaches" | "private";
+  createdAt: string | Date;
+  authorId: string;
+  targetUserId: string | null;
+  author: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  };
+  targetUser?: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
+}
+
 export const CommentSection = memo(
   forwardRef<CommentSectionRef, CommentSectionProps>(function CommentSection(
     { teamId, clipId, segmentId, itemType = "clip", isCoach },
@@ -48,7 +69,7 @@ export const CommentSection = memo(
     const [commentLevel, setCommentLevel] = useState<
       "all" | "coaches" | "private"
     >("coaches");
-    const [targetUserId, setTargetUserId] = useState<number | undefined>();
+    const [targetUserId, setTargetUserId] = useState<string | undefined>();
     const [shouldFocusOnOpen, setShouldFocusOnOpen] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -106,7 +127,7 @@ export const CommentSection = memo(
     );
 
     // Use the appropriate comments and loading state
-    const comments = itemType === "segment" ? segmentComments : clipComments;
+    const comments = (itemType === "segment" ? segmentComments : clipComments) as CommentWithRelations[] | undefined;
     const isLoadingComments = itemType === "segment" ? isLoadingSegmentComments : isLoadingClipComments;
     const refetchComments = itemType === "segment" ? refetchSegmentComments : refetchClipComments;
 
@@ -343,8 +364,8 @@ export const CommentSection = memo(
 
                 {commentLevel === "private" && (
                   <Select
-                    value={targetUserId?.toString()}
-                    onValueChange={(value) => setTargetUserId(Number(value))}
+                    value={targetUserId}
+                    onValueChange={setTargetUserId}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select player..." />
@@ -353,7 +374,7 @@ export const CommentSection = memo(
                       {playerUsers?.map((player) => (
                         <SelectItem
                           key={player.id}
-                          value={player.id.toString()}
+                          value={player.id}
                         >
                           {player.name}
                         </SelectItem>

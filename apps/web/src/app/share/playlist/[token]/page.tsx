@@ -65,7 +65,7 @@ export default function SharedPlaylistPage({
           videoSrc: src,
           segmentStart: item.segment.startS,
           segmentEnd: item.segment.endS,
-          tags: item.segment.tags?.map(t => ({ id: t.id, tag: t.tag })) || [],
+          tags: item.segment.tags?.map((t: { id: number; tag: string }) => ({ id: t.id, tag: t.tag })) || [],
         });
       } else if (item.clip) {
         const isReady = item.clip.status === "ready";
@@ -81,7 +81,7 @@ export default function SharedPlaylistPage({
           eventName: item.clip.event?.title || "Unknown Event",
           durationS: item.clip.durationS,
           videoSrc: src,
-          tags: item.clip.tags?.map(t => ({ id: t.id, tag: t.tag })) || [],
+          tags: item.clip.tags?.map((t: { id: number; tag: string }) => ({ id: t.id, tag: t.tag })) || [],
         });
       }
     }

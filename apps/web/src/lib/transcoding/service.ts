@@ -1,5 +1,4 @@
-import { clips, db } from "@kolla/db";
-import { eq } from "drizzle-orm";
+import { clips, db, eq } from "@kolla/db";
 import type {
   TranscodingProvider,
   SubmitJobOptions,

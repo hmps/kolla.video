@@ -26,8 +26,8 @@ export type PendingClip = {
   index: number;
   name: string | null;
   uploaderName: string | null;
-  uploader: {
-    id: number;
+  uploader?: {
+    id: string;
     firstName: string | null;
     lastName: string | null;
   } | null;

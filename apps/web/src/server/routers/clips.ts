@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
-import { clipPlayers, clips, clipTags, db, events, segments } from "@kolla/db";
+import { and, clipPlayers, clips, clipTags, db, eq, events, max, segments } from "@kolla/db";
 import { TRPCError } from "@trpc/server";
-import { and, eq, max } from "drizzle-orm";
 import { z } from "zod";
 import { deleteFile, getPresignedUploadUrl } from "../../lib/storage";
 import { router, teamProcedure } from "../trpc";
