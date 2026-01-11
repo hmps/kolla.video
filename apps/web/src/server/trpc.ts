@@ -7,15 +7,9 @@ import "server-only";
 import { s3Client } from "@/lib/s3";
 
 export const createContext = cache(async () => {
-  // Get session from Better Auth
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-
-  console.log(
-    "[tRPC Context] Session:",
-    session ? { userId: session.user.id, email: session.user.email } : null
-  );
 
   return {
     session,
@@ -33,10 +27,6 @@ export const publicProcedure = t.procedure;
 // Middleware to ensure user is authenticated
 const isAuthed = t.middleware(async ({ ctx, next }) => {
   if (!ctx.session || !ctx.user) {
-    console.error("[isAuthed Middleware] UNAUTHORIZED:", {
-      hasSession: !!ctx.session,
-      hasUser: !!ctx.user,
-    });
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({

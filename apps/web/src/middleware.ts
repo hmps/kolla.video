@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 
 // Routes that don't require authentication
 const publicPatterns = [
@@ -31,10 +32,7 @@ export async function middleware(request: NextRequest) {
   // Check for session cookie (optimistic check)
   // Note: This only checks cookie existence, not validity
   // Actual validation happens in page/API handlers via Better Auth
-  // On HTTPS, Better Auth prefixes cookies with __Secure-
-  const sessionCookie =
-    request.cookies.get("better-auth.session_token") ||
-    request.cookies.get("__Secure-better-auth.session_token");
+  const sessionCookie = getSessionCookie(request);
 
   if (!sessionCookie) {
     // Redirect to sign-in page

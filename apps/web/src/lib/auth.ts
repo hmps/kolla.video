@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins";
 import {
   db,
@@ -75,7 +76,7 @@ export const auth = betterAuth({
     },
   },
 
-  // Plugins
+  // Plugins (nextCookies must be last for proper cookie handling in server actions)
   plugins: [
     magicLink({
       sendMagicLink: async ({ email, url }) => {
@@ -87,6 +88,7 @@ export const auth = betterAuth({
         });
       },
     }),
+    nextCookies(),
   ],
 
   // Trusted origins for CSRF protection
