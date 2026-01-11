@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Video, Upload, Tag, Users, Eye, Shield, FolderOpen, MessageCircle, Github, Play, Sparkles } from "lucide-react";
+import { ArrowRight, Video, Upload, Tag, Users, Eye, Shield, FolderOpen, MessageCircle, Github, Play, Sparkles, Wallet, TrendingUp, Code } from "lucide-react";
 import { Space_Mono, Inter } from "next/font/google";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -86,7 +86,7 @@ const features = [
   { icon: MessageCircle, label: "Timeline comments" },
   { icon: Upload, label: "Unlimited uploads" },
   { icon: Users, label: "Unlimited members" },
-  { icon: Github, label: "Open source" },
+  { icon: Code, label: "Open source" },
 ];
 
 const useCases = [
@@ -122,6 +122,36 @@ const useCases = [
       "Tournament film sharing",
     ],
     gradient: "from-violet-500 to-purple-500",
+  },
+];
+
+const coachFeatures = [
+  {
+    icon: Wallet,
+    title: "Keep budgets in check",
+    description: "Hosted plans stay affordable, and you only pay for the service you actually use—no gold-plated bundles.",
+    bg: "bg-emerald-50",
+    hoverBg: "hover:bg-emerald-100",
+    iconBg: "bg-emerald-100",
+    iconColor: "text-emerald-600",
+  },
+  {
+    icon: TrendingUp,
+    title: "Fuel player growth",
+    description: "Video is a development accelerator, so every feature keeps athletes learning and coaches teaching.",
+    bg: "bg-blue-50",
+    hoverBg: "hover:bg-blue-100",
+    iconBg: "bg-blue-100",
+    iconColor: "text-blue-600",
+  },
+  {
+    icon: Code,
+    title: "Open source",
+    description: "Every line of code lives in the open. Self-host it or let us handle it—your choice.",
+    bg: "bg-violet-50",
+    hoverBg: "hover:bg-violet-100",
+    iconBg: "bg-violet-100",
+    iconColor: "text-violet-600",
   },
 ];
 
@@ -188,31 +218,17 @@ export function LandingPage() {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }
         }
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(15, 23, 42, 0.3); }
-          50% { box-shadow: 0 0 40px rgba(15, 23, 42, 0.5); }
-        }
         @keyframes gradient-shift {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
         .animate-float {
           animation: float 6s ease-in-out infinite;
-        }
-        .animate-pulse-glow {
-          animation: pulse-glow 3s ease-in-out infinite;
         }
         .animate-gradient {
           background-size: 200% 200%;
           animation: gradient-shift 8s ease infinite;
-        }
-        .group:hover .shimmer-effect {
-          animation: shimmer 0.8s ease-out;
         }
       `}</style>
 
@@ -236,10 +252,9 @@ export function LandingPage() {
             </Link>
             <Link
               href="/sign-in"
-              className="group relative overflow-hidden rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-slate-800 hover:shadow-lg hover:shadow-slate-900/25 hover:-translate-y-0.5"
+              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-slate-800 hover:-translate-y-0.5"
             >
-              <span className="relative z-10">Sign in</span>
-              <div className="shimmer-effect absolute inset-0 -z-0 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              Sign in
             </Link>
           </nav>
         </div>
@@ -277,20 +292,13 @@ export function LandingPage() {
                   Kolla keeps film study friendly and focused: film the game, upload
                   to Kolla, tag the moments, and share them with your squad.
                 </p>
-                <div className="mt-8 flex flex-wrap gap-4">
-                  <Button asChild className="group relative overflow-hidden rounded-md bg-slate-900 px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-900/25 hover:-translate-y-1 animate-pulse-glow">
+                <div className="mt-8">
+                  <Button asChild className="group rounded-md bg-slate-900 px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:bg-slate-800 hover:-translate-y-1">
                     <Link href="/sign-up">
-                      <span className="relative z-10 flex items-center">
+                      <span className="flex items-center">
                         Get Started Free
                         <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                       </span>
-                      <div className="shimmer-effect absolute inset-0 -z-0 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="group rounded-md border-slate-300 px-6 py-3 text-sm font-medium text-slate-700 transition-all duration-300 hover:border-slate-400 hover:bg-slate-50 hover:-translate-y-1">
-                    <Link href="https://github.com/hmps/kolla.video">
-                      <Github className="mr-2 h-4 w-4" />
-                      View on GitHub
                     </Link>
                   </Button>
                 </div>
@@ -350,52 +358,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* Trust Badges */}
-        <section className="border-y border-slate-200 bg-gradient-to-b from-slate-50 to-white px-6 py-10">
-          <div className="mx-auto max-w-6xl">
-            <AnimatedSection>
-              <p className="mb-6 text-center text-sm text-slate-500">
-                Trusted by youth clubs and academies
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-8">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    className="h-8 w-24 rounded bg-slate-200 opacity-60 transition-all duration-300 hover:opacity-100 hover:scale-110"
-                    style={{ transitionDelay: `${i * 50}ms` }}
-                  />
-                ))}
-              </div>
-            </AnimatedSection>
-          </div>
-        </section>
-
-        {/* Features Grid */}
-        <section className="border-b border-slate-200 px-6 py-20">
-          <div className="mx-auto max-w-6xl">
-            <AnimatedSection>
-              <h2 className={`${brandMono.className} text-center text-3xl font-bold text-slate-900`}>
-                What&apos;s in the Box?
-              </h2>
-            </AnimatedSection>
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {features.map((feature, index) => (
-                <AnimatedSection key={feature.label} delay={index * 100}>
-                  <div className="group flex cursor-default items-center gap-4 rounded-xl border border-transparent p-4 transition-all duration-300 hover:border-slate-200 hover:bg-slate-50 hover:shadow-lg hover:shadow-slate-200/50 hover:-translate-y-1">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 transition-all duration-300 group-hover:bg-slate-900 group-hover:text-white group-hover:scale-110">
-                      <feature.icon className="h-5 w-5 text-slate-700 transition-colors duration-300 group-hover:text-white" />
-                    </div>
-                    <span className={`${brandMono.className} text-sm font-medium text-slate-800`}>
-                      {feature.label}
-                    </span>
-                  </div>
-                </AnimatedSection>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works */}
+        {/* How It Works - FIRST */}
         <section className="border-b border-slate-200 px-6 py-20">
           <div className="mx-auto max-w-6xl">
             <AnimatedSection>
@@ -435,7 +398,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* Built for Coaches */}
+        {/* Built for Coaches - SECOND */}
         <section className="border-b border-slate-200 bg-gradient-to-b from-white to-slate-50 px-6 py-20">
           <div className="mx-auto max-w-6xl">
             <AnimatedSection>
@@ -448,15 +411,11 @@ export function LandingPage() {
               </p>
             </AnimatedSection>
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                { emoji: "💰", title: "Keep budgets in check", description: "Hosted plans stay affordable, and you only pay for the service you actually use—no gold-plated bundles.", bg: "bg-emerald-50", hoverBg: "hover:bg-emerald-100" },
-                { emoji: "🚀", title: "Fuel player growth", description: "Video is a development accelerator, so every feature keeps athletes learning and coaches teaching.", bg: "bg-blue-50", hoverBg: "hover:bg-blue-100" },
-                { emoji: "🔓", title: "Open source", description: "Every line of code lives in the open. Self-host it or let us handle it—your choice.", bg: "bg-violet-50", hoverBg: "hover:bg-violet-100" },
-              ].map((item, index) => (
+              {coachFeatures.map((item, index) => (
                 <AnimatedSection key={item.title} delay={index * 100}>
                   <div className={`group rounded-2xl border border-slate-200 ${item.bg} p-8 transition-all duration-300 ${item.hoverBg} hover:border-slate-300 hover:shadow-xl hover:-translate-y-2`}>
-                    <div className="mb-4 text-4xl transition-transform duration-300 group-hover:scale-125">
-                      {item.emoji}
+                    <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${item.iconBg} transition-transform duration-300 group-hover:scale-110`}>
+                      <item.icon className={`h-6 w-6 ${item.iconColor}`} />
                     </div>
                     <h3 className={`${brandMono.className} font-bold text-slate-900`}>
                       {item.title}
@@ -471,7 +430,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* Use Cases */}
+        {/* Use Cases - THIRD */}
         <section className="border-b border-slate-200 px-6 py-20">
           <div className="mx-auto max-w-6xl">
             <AnimatedSection>
@@ -507,7 +466,32 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* FAQ */}
+        {/* Features Grid - FOURTH */}
+        <section className="border-b border-slate-200 px-6 py-20">
+          <div className="mx-auto max-w-6xl">
+            <AnimatedSection>
+              <h2 className={`${brandMono.className} text-center text-3xl font-bold text-slate-900`}>
+                What&apos;s Included
+              </h2>
+            </AnimatedSection>
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {features.map((feature, index) => (
+                <AnimatedSection key={feature.label} delay={index * 100}>
+                  <div className="group flex cursor-default items-center gap-4 rounded-xl border border-transparent p-4 transition-all duration-300 hover:border-slate-200 hover:bg-slate-50 hover:shadow-lg hover:shadow-slate-200/50 hover:-translate-y-1">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 transition-all duration-300 group-hover:bg-slate-900 group-hover:text-white group-hover:scale-110">
+                      <feature.icon className="h-5 w-5 text-slate-700 transition-colors duration-300 group-hover:text-white" />
+                    </div>
+                    <span className={`${brandMono.className} text-sm font-medium text-slate-800`}>
+                      {feature.label}
+                    </span>
+                  </div>
+                </AnimatedSection>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ - FIFTH */}
         <section className="border-b border-slate-200 px-6 py-20">
           <div className="mx-auto max-w-6xl">
             <AnimatedSection>
@@ -532,26 +516,20 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="relative overflow-hidden px-6 py-24">
-          {/* Background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
-          {/* Animated orbs */}
-          <div className="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
-          <div className="absolute right-1/4 bottom-1/4 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
-
-          <div className="relative mx-auto max-w-6xl text-center">
+        {/* CTA Section - Solid black, no gradient */}
+        <section className="bg-slate-900 px-6 py-24">
+          <div className="mx-auto max-w-6xl text-center">
             <AnimatedSection>
               <h2 className={`${brandMono.className} text-3xl font-bold text-white md:text-4xl`}>
                 Ready to level up your film study?
               </h2>
-              <p className="mt-4 text-lg text-slate-300">
+              <p className="mt-4 text-lg text-slate-400">
                 Get started free. No credit card required.
               </p>
               <div className="mt-8">
-                <Button asChild className="group relative overflow-hidden rounded-md bg-white px-8 py-4 text-sm font-medium text-slate-900 transition-all duration-300 hover:bg-slate-100 hover:shadow-2xl hover:shadow-white/25 hover:-translate-y-1">
+                <Button asChild className="group rounded-md bg-white px-8 py-4 text-sm font-medium text-slate-900 transition-all duration-300 hover:bg-slate-100 hover:-translate-y-1">
                   <Link href="/sign-up">
-                    <span className="relative z-10 flex items-center">
+                    <span className="flex items-center">
                       Start Building Now
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                     </span>
@@ -579,6 +557,13 @@ export function LandingPage() {
               <p className="mt-4 max-w-xs text-sm text-slate-600">
                 Video built for the next rep. Open source film study for sports teams.
               </p>
+              <Link
+                href="https://github.com/hmps/kolla.video"
+                className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500 transition-colors duration-300 hover:text-slate-900"
+              >
+                <Github className="h-4 w-4" />
+                Proudly open source
+              </Link>
             </div>
             <div>
               <h4 className={`${brandMono.className} mb-4 font-bold text-slate-900`}>
