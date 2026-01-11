@@ -31,7 +31,10 @@ export async function middleware(request: NextRequest) {
   // Check for session cookie (optimistic check)
   // Note: This only checks cookie existence, not validity
   // Actual validation happens in page/API handlers via Better Auth
-  const sessionCookie = request.cookies.get("better-auth.session_token");
+  // On HTTPS, Better Auth prefixes cookies with __Secure-
+  const sessionCookie =
+    request.cookies.get("better-auth.session_token") ||
+    request.cookies.get("__Secure-better-auth.session_token");
 
   if (!sessionCookie) {
     // Redirect to sign-in page
