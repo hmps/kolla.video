@@ -1,13 +1,21 @@
 import { auth } from "@/lib/auth";
-import { ArrowRight, Video } from "lucide-react";
+import { ArrowRight, Video, Upload, Tag, Users, Eye, Shield, FolderOpen, MessageCircle, Github } from "lucide-react";
 import { headers } from "next/headers";
-import { Space_Grotesk } from "next/font/google";
+import { Space_Mono, Inter } from "next/font/google";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
-const WAITLIST_URL = "https://kolla.video/waitlist";
+const brandMono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
+
+const bodyFont = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 const faqs = [
   {
     question: "Why another video platform?",
@@ -40,138 +48,75 @@ const faqs = [
       "Yes. Athletes and coaches can watch, tag, and comment from phones, tablets, or laptops.",
   },
 ];
-const brandSans = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
+
 const flowSteps = [
   {
+    icon: Upload,
     title: "Film it your way",
     description:
       "Drop in full matches, practice scrimmages, or quick phone clips. Kolla keeps the quality and gets the video ready fast.",
   },
   {
+    icon: Tag,
     title: "Tag what matters",
     description:
       "Mark plays, drill segments, and player moments so you can jump back to the right teaching point in seconds.",
   },
   {
+    icon: Users,
     title: "Coach together",
     description:
       "Share playlists with staff and athletes. Comments and assignments stay tied to the exact timestamp, even on mobile.",
-    highlight: true,
   },
   {
+    icon: Eye,
     title: "See who watched",
     description:
       "Simple viewing stats show who has caught up on film, helping you plan the next session with confidence.",
   },
 ];
-const principles = [
-  {
-    title: "Built by coaches",
-    copy: "Created for a youth handball club and the countless teams like it that just need a reliable video room.",
-  },
-  {
-    title: "Keep budgets in check",
-    copy: "Hosted plans stay affordable, and you only pay for the service you actually use—no gold-plated bundles.",
-  },
-  {
-    title: "Fuel player growth",
-    copy: "Video is a development accelerator, so every feature keeps athletes learning and coaches teaching.",
-  },
-];
-const capabilities = [
-  {
-    title: "Roles that make sense",
-    copy: "Set different access for coaches, athletes, and guardians so everyone sees exactly what they need.",
-  },
-  {
-    title: "Flexible collections",
-    copy: "Group clips by opponent, season, or training block and keep everything tidy as new film comes in.",
-  },
-  {
-    title: "Conversation on the timeline",
-    copy: "Leave comments, questions, and shout-outs right on the play so feedback sticks after practice.",
-  },
+
+const features = [
+  { icon: Shield, label: "Role-based access" },
+  { icon: FolderOpen, label: "Flexible collections" },
+  { icon: MessageCircle, label: "Timeline comments" },
+  { icon: Upload, label: "Unlimited uploads" },
+  { icon: Users, label: "Unlimited members" },
+  { icon: Github, label: "Open source" },
 ];
 
-function _WaitlistCta({ variant = "light" }: { variant?: "light" | "dark" }) {
-  const isLight = variant === "light";
-  return (
-    <div
-      className={`rounded-[40px] border-2 p-6 sm:p-8 ${
-        isLight
-          ? "border-slate-300 bg-slate-50 text-slate-900"
-          : "border-slate-700 bg-slate-800 text-slate-100"
-      }`}
-    >
-      <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-4 sm:max-w-md">
-          <p
-            className={`text-xs uppercase tracking-[0.35em] ${
-              isLight ? "text-slate-500" : "text-slate-300"
-            }`}
-          >
-            Waitlist
-          </p>
-          <h3
-            className={`${brandSans.className} text-2xl font-semibold sm:text-[2rem] ${
-              isLight ? "text-slate-900" : "text-slate-50"
-            }`}
-          >
-            Secure a spot for your next season.
-          </h3>
-          <p
-            className={`text-sm leading-relaxed ${
-              isLight ? "text-slate-600" : "text-slate-200"
-            }`}
-          >
-            Add your best contact and we’ll reach out as new cohorts open with
-            onboarding materials tailored to your club.
-          </p>
-        </div>
-        <div className="w-full max-w-sm">
-          <form
-            action={WAITLIST_URL}
-            method="get"
-            className="flex flex-col gap-3 sm:flex-row"
-          >
-            <Input
-              type="email"
-              name="email"
-              placeholder="coach@club.com"
-              className={`h-12 rounded-full border px-5 text-sm sm:text-base ${
-                isLight
-                  ? "border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-slate-700"
-                  : "border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-slate-200/60"
-              }`}
-              required
-            />
-            <Button
-              type="submit"
-              className={`h-12 rounded-full px-6 text-sm font-semibold sm:text-base ${
-                isLight
-                  ? "bg-slate-900 text-slate-50 hover:bg-slate-800"
-                  : "bg-slate-100 text-slate-900 hover:bg-slate-200"
-              }`}
-            >
-              Join Waitlist
-            </Button>
-          </form>
-          <p
-            className={`mt-3 text-xs ${
-              isLight ? "text-slate-500" : "text-slate-300"
-            } sm:text-sm`}
-          >
-            We reply within a few days with a quick checklist and sample
-            workflows.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
+const useCases = [
+  {
+    title: "Youth Clubs",
+    description: "Built for grassroots teams:",
+    items: [
+      "Affordable for any budget",
+      "Easy for volunteers to manage",
+      "Safe sharing with parents",
+      "Season-by-season organization",
+    ],
+  },
+  {
+    title: "High School Teams",
+    description: "Support player development:",
+    items: [
+      "Film study before big games",
+      "Individual skill breakdowns",
+      "Recruit-ready highlight reels",
+      "Cross-sport compatibility",
+    ],
+  },
+  {
+    title: "Club Academies",
+    description: "Scale across age groups:",
+    items: [
+      "Centralized video library",
+      "Coach collaboration tools",
+      "Player progress tracking",
+      "Tournament film sharing",
+    ],
+  },
+];
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -183,260 +128,351 @@ export default async function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
-      <header className="fixed left-1/2 top-6 z-50 flex w-full -translate-x-1/2 justify-center px-4 sm:px-8">
-        <div className="flex w-full max-w-7xl items-center justify-between rounded-full border-2 border-slate-700 bg-slate-50 px-6 py-3 text-slate-900 shadow-[0_10px_40px_rgba(15,23,42,0.35)] sm:px-10">
-          <div className="flex items-center gap-5">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-white text-slate-900">
-              <Video className="h-6 w-6" aria-hidden="true" />
+    <div className={`${bodyFont.className} min-h-screen bg-white text-slate-800`}>
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white">
+              <Video className="h-5 w-5" />
             </div>
-            <div>
-              <span
-                className={`${brandSans.className} text-xl font-semibold uppercase tracking-[0.14em]`}
-              >
-                Kolla.video
-              </span>
-              <p className="text-[0.65rem] uppercase tracking-[0.12em] text-slate-500">
-                Video for every team
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-full border border-slate-300 px-5 py-2 text-xs font-medium uppercase tracking-[0.28em] text-slate-900 hover:bg-slate-200"
+            <span className={`${brandMono.className} text-xl font-bold`}>
+              kolla
+            </span>
+          </Link>
+          <nav className="flex items-center gap-6">
+            <Link
+              href="https://github.com/hmps/kolla.video"
+              className="text-sm text-slate-600 hover:text-slate-900"
             >
-              <Link href="https://github.com/hmps/kolla.video">GitHub</Link>
-            </Button>
-            <Button
-              asChild
-              className="rounded-full border border-slate-900 bg-slate-900 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-100 hover:bg-slate-800"
+              GitHub
+            </Link>
+            <Link
+              href="/sign-in"
+              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
             >
-              <Link href="/sign-in">Sign In</Link>
-            </Button>
-          </div>
+              Sign in
+            </Link>
+          </nav>
         </div>
       </header>
-      <main className="space-y-0 pb-24 pt-36">
-        <section className="border-b h-[70vh] border-slate-800 px-8 py-24 sm:px-16 sm:py-32 lg:px-32">
-          <div className="w-full max-w-5xl">
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
-              Built By Coaches
-            </p>
-            <h1
-              className={`${brandSans.className} mt-6 max-w-6xl text-7xl font-semibold leading-[1.05] sm:text-6xl md:text-[4.25rem]`}
-            >
-              Film study that doesn't break the bank
-            </h1>
-            <p className="mt-8 max-w-6xl text-lg leading-relaxed text-slate-200">
-              Kolla keeps film study friendly and focused: film the game, upload
-              to Kolla, tag the moments, and share them with your squad.
-            </p>
-          </div>
-        </section>
-        <section className="border-b border-slate-200 bg-slate-50 px-8 py-28 text-slate-900 sm:px-16 sm:py-36 lg:px-32">
-          <div className="w-full">
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-4xl">
-                <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
-                  How It Works
+
+      <main>
+        {/* Hero Section */}
+        <section className="px-6 py-20 md:py-28">
+          <div className="mx-auto max-w-6xl">
+            <div className="grid items-center gap-12 lg:grid-cols-2">
+              <div>
+                <p className="mb-4 text-sm font-medium uppercase tracking-wider text-slate-500">
+                  Built by coaches, for coaches
                 </p>
-                <h2
-                  className={`${brandSans.className} mt-4 text-4xl font-semibold leading-tight sm:text-[3.2rem]`}
-                >
-                  From camera roll to team review in minutes.
-                </h2>
-                <p className="mt-6 text-base leading-relaxed text-slate-600 sm:text-lg">
-                  Film the game, drop the video into Kolla, and everything else
-                  is ready to go. No clutter, no maze of menus—just the steps
-                  coaches actually run every week.
+                <h1 className={`${brandMono.className} text-4xl font-bold leading-tight text-slate-900 md:text-5xl lg:text-[3.25rem]`}>
+                  Film Study That Doesn&apos;t Break the Bank.
+                </h1>
+                <p className="mt-6 text-lg leading-relaxed text-slate-600">
+                  Kolla keeps film study friendly and focused: film the game, upload
+                  to Kolla, tag the moments, and share them with your squad.
                 </p>
+                <div className="mt-8 flex flex-wrap gap-4">
+                  <Button asChild className="rounded-md bg-slate-900 px-6 py-3 text-sm font-medium text-white hover:bg-slate-800">
+                    <Link href="/sign-up">
+                      Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="rounded-md border-slate-300 px-6 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    <Link href="https://github.com/hmps/kolla.video">
+                      View on GitHub
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+              {/* Phone Mockup Placeholder */}
+              <div className="flex justify-center lg:justify-end">
+                <div className="relative">
+                  <div className="h-[500px] w-[260px] overflow-hidden rounded-[40px] border-8 border-slate-900 bg-gradient-to-br from-slate-100 to-slate-200 shadow-2xl">
+                    <div className="flex h-full flex-col">
+                      {/* Phone status bar */}
+                      <div className="flex items-center justify-center bg-slate-900 py-2">
+                        <div className="h-6 w-24 rounded-full bg-slate-800" />
+                      </div>
+                      {/* App content placeholder */}
+                      <div className="flex-1 p-4">
+                        <div className="mb-4 h-4 w-20 rounded bg-slate-300" />
+                        <div className="mb-3 aspect-video w-full rounded-lg bg-gradient-to-br from-slate-300 to-slate-400" />
+                        <div className="mb-2 h-3 w-full rounded bg-slate-300" />
+                        <div className="mb-4 h-3 w-3/4 rounded bg-slate-300" />
+                        <div className="flex gap-2">
+                          <div className="h-8 w-16 rounded bg-slate-900" />
+                          <div className="h-8 w-16 rounded border border-slate-300 bg-white" />
+                        </div>
+                        <div className="mt-6 space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-slate-300" />
+                            <div className="flex-1">
+                              <div className="mb-1 h-3 w-24 rounded bg-slate-300" />
+                              <div className="h-2 w-32 rounded bg-slate-200" />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-slate-300" />
+                            <div className="flex-1">
+                              <div className="mb-1 h-3 w-20 rounded bg-slate-300" />
+                              <div className="h-2 w-28 rounded bg-slate-200" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="mt-16 grid gap-6 lg:grid-cols-2">
-              {flowSteps.map((step, index) => (
-                <div
-                  key={step.title}
-                  className={`relative border-2 px-8 py-10 ${
-                    step.highlight
-                      ? "border-slate-900 bg-slate-900 text-slate-50"
-                      : "border-slate-200 bg-white text-slate-900"
-                  }`}
-                >
-                  <div className="absolute left-8 top-8 text-xs font-semibold uppercase tracking-[0.32em] text-slate-400">
-                    {String(index + 1).padStart(2, "0")}
+          </div>
+        </section>
+
+        {/* Trust Badges */}
+        <section className="border-y border-slate-200 bg-slate-50 px-6 py-8">
+          <div className="mx-auto max-w-6xl">
+            <p className="mb-6 text-center text-sm text-slate-500">
+              Trusted by youth clubs and academies
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-8 opacity-60">
+              {/* Placeholder logos */}
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-8 w-24 rounded bg-slate-300" />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Grid */}
+        <section className="border-b border-slate-200 px-6 py-20">
+          <div className="mx-auto max-w-6xl">
+            <h2 className={`${brandMono.className} text-center text-3xl font-bold text-slate-900`}>
+              What&apos;s in the Box?
+            </h2>
+            <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {features.map((feature) => (
+                <div key={feature.label} className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+                    <feature.icon className="h-5 w-5 text-slate-700" />
                   </div>
-                  <div className="pl-20">
-                    <h3
-                      className={`${brandSans.className} text-2xl font-semibold sm:text-3xl`}
-                    >
-                      {step.title}
-                    </h3>
-                    <p
-                      className={`mt-4 text-sm leading-relaxed sm:text-base ${
-                        step.highlight ? "text-slate-200" : "text-slate-600"
-                      }`}
-                    >
-                      {step.description}
-                    </p>
-                  </div>
+                  <span className={`${brandMono.className} text-sm font-medium text-slate-800`}>
+                    {feature.label}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         </section>
-        <section className="border-b border-slate-800 px-8 py-28 sm:px-16 sm:py-36 lg:px-32">
-          <div className="w-full">
-            <div className="lg:grid lg:grid-cols-12 lg:gap-16">
-              <div className="lg:col-span-7">
-                <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
-                  Why Kolla
-                </p>
-                <h2
-                  className={`${brandSans.className} mt-4 text-4xl font-semibold leading-tight sm:text-[3.2rem]`}
-                >
-                  Built to stay out of the way of real coaching.
-                </h2>
-              </div>
-            </div>
-            <div className="mt-16 grid gap-12 lg:grid-cols-3">
-              {principles.map((principle) => (
+
+        {/* How It Works */}
+        <section className="border-b border-slate-200 px-6 py-20">
+          <div className="mx-auto max-w-6xl">
+            <h2 className={`${brandMono.className} text-3xl font-bold text-slate-900`}>
+              Get Started in Minutes
+            </h2>
+            <p className="mt-4 max-w-2xl text-lg text-slate-600">
+              Film the game, drop the video into Kolla, and everything else
+              is ready to go. No clutter, no maze of menus.
+            </p>
+            <div className="mt-12 grid gap-8 md:grid-cols-2">
+              {flowSteps.map((step, index) => (
                 <div
-                  key={principle.title}
-                  className="border-2 border-slate-700 bg-slate-800 p-10"
+                  key={step.title}
+                  className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm"
                 >
-                  <h3
-                    className={`${brandSans.className} text-2xl font-semibold text-slate-50`}
-                  >
-                    {principle.title}
+                  <div className="mb-4 flex items-center gap-4">
+                    <span className={`${brandMono.className} text-sm font-bold text-slate-400`}>
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
+                      <step.icon className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <h3 className={`${brandMono.className} text-xl font-bold text-slate-900`}>
+                    {step.title}
                   </h3>
-                  <p className="mt-5 text-sm leading-relaxed text-slate-300 sm:text-base">
-                    {principle.copy}
+                  <p className="mt-3 text-slate-600">
+                    {step.description}
                   </p>
                 </div>
               ))}
             </div>
           </div>
         </section>
-        <section className="border-b border-slate-200 bg-slate-200 px-8 py-28 text-slate-900 sm:px-16 sm:py-36 lg:px-32">
-          <div className="w-full">
-            <div className="flex flex-col gap-8">
-              <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
-                  Team Access
-                </p>
-                <h2
-                  className={`${brandSans.className} mt-4 text-4xl font-semibold leading-tight sm:text-[3.2rem]`}
-                >
-                  Controls that match how clubs actually work.
-                </h2>
-                <p className="mt-6 max-w-3xl text-base leading-relaxed text-slate-700 sm:text-lg">
-                  Invite the whole club, share playlists with a click, and see
-                  who has watched which clips so you know where to follow up.
-                  It’s everything you need to keep the group aligned before the
-                  next session.
+
+        {/* Built for Coaches */}
+        <section className="border-b border-slate-200 px-6 py-20">
+          <div className="mx-auto max-w-6xl">
+            <h2 className={`${brandMono.className} text-3xl font-bold text-slate-900`}>
+              Built for Coaches, by Coaches
+            </h2>
+            <p className="mt-4 max-w-3xl text-lg text-slate-600">
+              We created Kolla for a youth handball club and the countless teams like it
+              that just need a reliable video room without the enterprise price tag.
+            </p>
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-lg border border-slate-200 p-6">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
+                  <span className="text-lg">💰</span>
+                </div>
+                <h3 className={`${brandMono.className} font-bold text-slate-900`}>
+                  Keep budgets in check
+                </h3>
+                <p className="mt-2 text-sm text-slate-600">
+                  Hosted plans stay affordable, and you only pay for the service you actually use—no gold-plated bundles.
                 </p>
               </div>
-              <div className="grid gap-8 lg:grid-cols-3">
-                {capabilities.map((item) => (
-                  <div
-                    key={item.title}
-                    className="border-2 border-slate-500 bg-slate-50 p-10"
-                  >
-                    <h3
-                      className={`${brandSans.className} text-2xl font-semibold text-slate-900`}
-                    >
-                      {item.title}
-                    </h3>
-                    <p className="mt-5 text-sm leading-relaxed text-slate-600 sm:text-base">
-                      {item.copy}
-                    </p>
-                  </div>
-                ))}
+              <div className="rounded-lg border border-slate-200 p-6">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+                  <span className="text-lg">🚀</span>
+                </div>
+                <h3 className={`${brandMono.className} font-bold text-slate-900`}>
+                  Fuel player growth
+                </h3>
+                <p className="mt-2 text-sm text-slate-600">
+                  Video is a development accelerator, so every feature keeps athletes learning and coaches teaching.
+                </p>
               </div>
-            </div>
-          </div>
-        </section>
-        <section className="border-b border-slate-200 bg-slate-50 px-8 py-28 text-slate-900 sm:px-16 sm:py-36 lg:px-32">
-          <div className="w-full">
-            <div className="lg:grid lg:grid-cols-12 lg:gap-16">
-              <div className="lg:col-span-6">
-                <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
-                  Open Source
+              <div className="rounded-lg border border-slate-200 p-6">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+                  <span className="text-lg">🔓</span>
+                </div>
+                <h3 className={`${brandMono.className} font-bold text-slate-900`}>
+                  Open source
+                </h3>
+                <p className="mt-2 text-sm text-slate-600">
+                  Every line of code lives in the open. Self-host it or let us handle it—your choice.
                 </p>
-                <h2
-                  className={`${brandSans.className} mt-4 text-4xl font-semibold leading-tight sm:text-[3.2rem]`}
-                >
-                  Run Kolla your way.
-                </h2>
-              </div>
-              <div className="mt-10 space-y-6 text-base leading-relaxed text-slate-600 sm:text-lg lg:col-span-6 lg:mt-0">
-                <p>
-                  Kolla is open source, so every line of code lives in the open.
-                  If you want to self-host, clone the repo, point it at your
-                  storage, and keep full control of your footage and data.
-                </p>
-                <p>
-                  Prefer not to run servers? Join the hosted waitlist and we’ll
-                  handle storage, updates, and onboarding while you focus on
-                  coaching.
-                </p>
-                <Button
-                  asChild
-                  className="inline-flex items-center rounded-none border-2 border-slate-900 bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-slate-50 hover:bg-slate-800"
-                >
-                  <Link href="https://github.com/hmps/kolla.video">
-                    Explore GitHub
-                    <ArrowRight className="ml-3 h-4 w-4" aria-hidden="true" />
-                  </Link>
-                </Button>
               </div>
             </div>
           </div>
         </section>
-        <section className="px-8 py-28 sm:px-16 sm:py-36 lg:px-32">
-          <div className="w-full">
-            <div className="lg:grid lg:grid-cols-12 lg:gap-16">
-              <div className="lg:col-span-5">
-                <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
-                  FAQ
-                </p>
-                <h2
-                  className={`${brandSans.className} mt-4 text-4xl font-semibold leading-tight sm:text-[3.2rem]`}
-                >
-                  Answers for busy coaches.
-                </h2>
-              </div>
-              <div className="mt-12 space-y-8 text-slate-200 lg:col-span-7 lg:mt-0">
-                {faqs.map((faq) => (
-                  <div
-                    key={faq.question}
-                    className="border-b border-slate-800 pb-6"
-                  >
-                    <p
-                      className={`${brandSans.className} text-2xl font-semibold text-slate-100`}
-                    >
-                      {faq.question}
-                    </p>
-                    <p className="mt-3 text-sm leading-relaxed text-slate-400 sm:text-base">
-                      {faq.answer}
-                    </p>
-                  </div>
-                ))}
-              </div>
+
+        {/* Use Cases */}
+        <section className="border-b border-slate-200 px-6 py-20">
+          <div className="mx-auto max-w-6xl">
+            <h2 className={`${brandMono.className} text-3xl font-bold text-slate-900`}>
+              Use Cases
+            </h2>
+            <div className="mt-12 grid gap-8 lg:grid-cols-3">
+              {useCases.map((useCase) => (
+                <div key={useCase.title}>
+                  <h3 className={`${brandMono.className} text-xl font-bold text-slate-900`}>
+                    {useCase.title}
+                  </h3>
+                  <p className="mt-2 text-slate-600">{useCase.description}</p>
+                  <ul className="mt-4 space-y-2">
+                    {useCase.items.map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
+                        <span className="mt-1 text-slate-400">•</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="border-b border-slate-200 px-6 py-20">
+          <div className="mx-auto max-w-6xl">
+            <h2 className={`${brandMono.className} text-3xl font-bold text-slate-900`}>
+              FAQs
+            </h2>
+            <div className="mt-12 grid gap-x-12 gap-y-8 md:grid-cols-2">
+              {faqs.map((faq) => (
+                <div key={faq.question}>
+                  <h3 className={`${brandMono.className} font-bold text-slate-900`}>
+                    {faq.question}
+                  </h3>
+                  <p className="mt-2 text-slate-600">
+                    {faq.answer}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="px-6 py-20">
+          <div className="mx-auto max-w-6xl text-center">
+            <h2 className={`${brandMono.className} text-3xl font-bold text-slate-900`}>
+              Ready to level up your film study?
+            </h2>
+            <p className="mt-4 text-lg text-slate-600">
+              Get started free. No credit card required.
+            </p>
+            <div className="mt-8">
+              <Button asChild className="rounded-md bg-slate-900 px-8 py-3 text-sm font-medium text-white hover:bg-slate-800">
+                <Link href="/sign-up">
+                  Start Building Now <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
           </div>
         </section>
       </main>
-      <footer className="border-t border-slate-800 px-6 py-14 text-xs uppercase tracking-[0.32em] text-slate-500 sm:px-12 lg:px-16">
-        <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-200 px-6 py-12">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-8 md:grid-cols-4">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white">
+                  <Video className="h-5 w-5" />
+                </div>
+                <span className={`${brandMono.className} text-xl font-bold`}>
+                  kolla
+                </span>
+              </div>
+              <p className="mt-4 max-w-xs text-sm text-slate-600">
+                Video built for the next rep. Open source film study for sports teams.
+              </p>
+            </div>
+            <div>
+              <h4 className={`${brandMono.className} mb-4 font-bold text-slate-900`}>
+                Product
+              </h4>
+              <ul className="space-y-2 text-sm text-slate-600">
+                <li>
+                  <Link href="/sign-up" className="hover:text-slate-900">
+                    Get Started
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/sign-in" className="hover:text-slate-900">
+                    Sign In
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className={`${brandMono.className} mb-4 font-bold text-slate-900`}>
+                Resources
+              </h4>
+              <ul className="space-y-2 text-sm text-slate-600">
+                <li>
+                  <Link href="https://github.com/hmps/kolla.video" className="hover:text-slate-900">
+                    GitHub
+                  </Link>
+                </li>
+                <li>
+                  <Link href="mailto:team@kolla.video" className="hover:text-slate-900">
+                    Contact
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-12 border-t border-slate-200 pt-8 text-sm text-slate-500">
             © {new Date().getFullYear()} Kolla — video built for the next rep.
-          </p>
-          <Link href="mailto:team@kolla.video" className="hover:text-slate-200">
-            team@kolla.video
-          </Link>
+          </div>
         </div>
       </footer>
     </div>
