@@ -12,6 +12,7 @@ import {
   Play,
   RotateCcw,
   RotateCw,
+  Scissors,
   Upload,
   X,
 } from "lucide-react";
@@ -23,6 +24,8 @@ import {
 } from "@/components/comment-section";
 import { EditEventDialog } from "@/components/edit-event-dialog";
 import { OnboardingDialog } from "@/components/onboarding-dialog";
+import { SegmentCreator } from "@/components/segment-creator";
+import type { MediaItem } from "./columns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,8 +83,14 @@ export default function EventDetailPage({
   const teamIdNum = Number.parseInt(teamId, 10);
   const eventIdNum = Number.parseInt(eventId, 10);
 
-  const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
-  const [clipsToDelete, setClipsToDelete] = useState<number[]>([]);
+  // Selection state - tracks both type and id
+  const [selectedItem, setSelectedItem] = useState<{
+    type: "clip" | "segment";
+    id: number;
+  } | null>(null);
+  const [itemsToDelete, setItemsToDelete] = useState<
+    Array<{ type: "clip" | "segment"; id: number }>
+  >([]);
   const [shouldAutoplay, setShouldAutoplay] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
@@ -91,6 +100,11 @@ export default function EventDetailPage({
   const [nameInput, setNameInput] = useState("");
   const [isEditEventDialogOpen, setIsEditEventDialogOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  // Segment creation state
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isCreatingSegment, setIsCreatingSegment] = useState(false);
+  const [segmentMarkIn, setSegmentMarkIn] = useState<number | null>(null);
+  const [segmentMarkOut, setSegmentMarkOut] = useState<number | null>(null);
   const mobilePlayerRef = useRef<VidstackPlayerRef>(null);
   const desktopPlayerRef = useRef<VidstackPlayerRef>(null);
   const commentSectionRef = useRef<CommentSectionRef>(null);
@@ -106,11 +120,11 @@ export default function EventDetailPage({
     }),
   );
   const {
-    data: clips,
-    refetch: refetchClips,
+    data: mediaItems,
+    refetch: refetchMedia,
     isLoading,
   } = useQuery(
-    trpc.clips.byEvent.queryOptions({
+    trpc.clips.mediaByEvent.queryOptions({
       teamId: teamIdNum,
       eventId: eventIdNum,
     }),
@@ -124,13 +138,13 @@ export default function EventDetailPage({
     trpc.onboarding.markComplete.mutationOptions(),
   );
 
-  // Load first clip on mount with autoplay
+  // Load first item on mount with autoplay
   useEffect(() => {
-    if (clips && clips.length > 0 && selectedClipId === null) {
-      setSelectedClipId(clips[0].id);
+    if (mediaItems && mediaItems.length > 0 && selectedItem === null) {
+      setSelectedItem({ type: mediaItems[0].type, id: mediaItems[0].id });
       setShouldAutoplay(true);
     }
-  }, [clips, selectedClipId]);
+  }, [mediaItems, selectedItem]);
 
   // Show onboarding if not completed
   useEffect(() => {
@@ -146,11 +160,20 @@ export default function EventDetailPage({
     markOnboardingComplete.mutate({ key: "event_player_page" });
   }, [markOnboardingComplete]);
 
-  const deleteClips = useMutation(
+  const deleteClip = useMutation(
     trpc.clips.delete.mutationOptions({
       onSuccess: () => {
-        setClipsToDelete([]);
-        refetchClips();
+        setItemsToDelete([]);
+        refetchMedia();
+      },
+    }),
+  );
+
+  const deleteSegment = useMutation(
+    trpc.segments.delete.mutationOptions({
+      onSuccess: () => {
+        setItemsToDelete([]);
+        refetchMedia();
       },
     }),
   );
@@ -158,7 +181,7 @@ export default function EventDetailPage({
   const setTags = useMutation(
     trpc.clips.setTags.mutationOptions({
       onSuccess: () => {
-        refetchClips();
+        refetchMedia();
       },
     }),
   );
@@ -166,7 +189,7 @@ export default function EventDetailPage({
   const deleteTag = useMutation(
     trpc.clips.deleteTag.mutationOptions({
       onSuccess: () => {
-        refetchClips();
+        refetchMedia();
       },
     }),
   );
@@ -174,7 +197,7 @@ export default function EventDetailPage({
   const updateName = useMutation(
     trpc.clips.updateName.mutationOptions({
       onSuccess: () => {
-        refetchClips();
+        refetchMedia();
       },
     }),
   );
@@ -182,43 +205,73 @@ export default function EventDetailPage({
   const updateMetadata = useMutation(
     trpc.clips.updateMetadata.mutationOptions({
       onSuccess: () => {
-        refetchClips();
+        refetchMedia();
       },
     }),
   );
 
-  const selectedClip = useMemo(
-    () => clips?.find((clip) => clip.id === selectedClipId),
-    [clips, selectedClipId],
-  );
+  // Find the currently selected media item
+  const selectedMedia = useMemo(() => {
+    if (!selectedItem || !mediaItems) return null;
+    return mediaItems.find(
+      (item) => item.type === selectedItem.type && item.id === selectedItem.id,
+    );
+  }, [mediaItems, selectedItem]);
+
+  // For backward compatibility - get as clip if it's a clip
+  const selectedClip = useMemo(() => {
+    if (selectedMedia?.type === "clip") return selectedMedia;
+    return null;
+  }, [selectedMedia]);
 
   const columns = useMemo(
     () => getColumns(team?.role === "coach"),
     [team?.role],
   );
 
-  const handleDeleteSelected = useCallback((selectedIds: number[]) => {
-    if (selectedIds.length === 0) return;
-    setClipsToDelete(selectedIds);
-  }, []);
+  const handleDeleteSelected = useCallback(
+    (selectedIds: number[]) => {
+      if (selectedIds.length === 0 || !mediaItems) return;
+      // Map IDs to items with their types
+      const items = selectedIds
+        .map((id) => {
+          const item = mediaItems.find((m) => m.id === id);
+          return item ? { type: item.type, id } : null;
+        })
+        .filter((x): x is { type: "clip" | "segment"; id: number } => x !== null);
+      setItemsToDelete(items);
+    },
+    [mediaItems],
+  );
 
   const confirmDelete = useCallback(() => {
-    // Delete clips one by one
-    clipsToDelete.forEach((clipId) => {
-      deleteClips.mutate({
-        teamId: teamIdNum,
-        clipId,
-      });
+    // Delete items based on their type
+    itemsToDelete.forEach((item) => {
+      if (item.type === "clip") {
+        deleteClip.mutate({
+          teamId: teamIdNum,
+          clipId: item.id,
+        });
+      } else {
+        deleteSegment.mutate({
+          teamId: teamIdNum,
+          segmentId: item.id,
+        });
+      }
     });
-  }, [clipsToDelete, deleteClips, teamIdNum]);
+  }, [itemsToDelete, deleteClip, deleteSegment, teamIdNum]);
 
-  const handleRowClick = useCallback((clip: { id: number }) => {
-    setSelectedClipId(clip.id);
+  const handleRowClick = useCallback((item: MediaItem) => {
+    setSelectedItem({ type: item.type, id: item.id });
     setShouldAutoplay(true);
+    // Clear segment creation mode when selecting a different item
+    setIsCreatingSegment(false);
+    setSegmentMarkIn(null);
+    setSegmentMarkOut(null);
   }, []);
 
   const handleAddTags = useCallback(() => {
-    if (!selectedClipId || !tagInput.trim()) {
+    if (!selectedItem || !tagInput.trim()) {
       setIsTagDialogOpen(false);
       setTagInput("");
       return;
@@ -236,7 +289,7 @@ export default function EventDetailPage({
     }
 
     const existingTagStrings = new Set(
-      selectedClip?.tags?.map((t) => t.tag) ?? [],
+      selectedMedia?.tags?.map((t) => t.tag) ?? [],
     );
 
     // Filter out duplicates - only add tags that don't already exist
@@ -249,67 +302,79 @@ export default function EventDetailPage({
     }
 
     const allTags = [
-      ...(selectedClip?.tags?.map((t) => t.tag) ?? []),
+      ...(selectedMedia?.tags?.map((t) => t.tag) ?? []),
       ...uniqueNewTags,
     ];
 
-    setTags.mutate({
-      teamId: teamIdNum,
-      clipId: selectedClipId,
-      tags: allTags,
-    });
+    // TODO: Add segment tag support when needed
+    if (selectedItem.type === "clip") {
+      setTags.mutate({
+        teamId: teamIdNum,
+        clipId: selectedItem.id,
+        tags: allTags,
+      });
+    }
 
     setIsTagDialogOpen(false);
     setTagInput("");
-  }, [selectedClipId, selectedClip, tagInput, teamIdNum, setTags]);
+  }, [selectedItem, selectedMedia, tagInput, teamIdNum, setTags]);
 
   const handleDeleteTag = useCallback(
     (tagId: number) => {
-      if (!selectedClipId) return;
+      if (!selectedItem || selectedItem.type !== "clip") return;
 
       deleteTag.mutate({
         teamId: teamIdNum,
-        clipId: selectedClipId,
+        clipId: selectedItem.id,
         tagId,
       });
     },
-    [selectedClipId, teamIdNum, deleteTag],
+    [selectedItem, teamIdNum, deleteTag],
   );
 
   const handleRename = useCallback(() => {
-    if (!selectedClipId || !nameInput.trim()) {
+    if (!selectedItem || !nameInput.trim()) {
       setIsRenameDialogOpen(false);
       setNameInput("");
       return;
     }
 
-    updateName.mutate({
-      teamId: teamIdNum,
-      clipId: selectedClipId,
-      name: nameInput.trim(),
-    });
+    // TODO: Add segment rename support when needed
+    if (selectedItem.type === "clip") {
+      updateName.mutate({
+        teamId: teamIdNum,
+        clipId: selectedItem.id,
+        name: nameInput.trim(),
+      });
+    }
 
     setIsRenameDialogOpen(false);
     setNameInput("");
-  }, [selectedClipId, nameInput, teamIdNum, updateName]);
+  }, [selectedItem, nameInput, teamIdNum, updateName]);
 
-  const goToPreviousClip = useCallback(() => {
-    if (!clips || clips.length === 0) return;
-    const currentIndex = clips.findIndex((clip) => clip.id === selectedClipId);
+  const goToPreviousItem = useCallback(() => {
+    if (!mediaItems || mediaItems.length === 0 || !selectedItem) return;
+    const currentIndex = mediaItems.findIndex(
+      (item) => item.type === selectedItem.type && item.id === selectedItem.id,
+    );
     if (currentIndex > 0) {
-      setSelectedClipId(clips[currentIndex - 1].id);
+      const prevItem = mediaItems[currentIndex - 1];
+      setSelectedItem({ type: prevItem.type, id: prevItem.id });
       setShouldAutoplay(true);
     }
-  }, [clips, selectedClipId]);
+  }, [mediaItems, selectedItem]);
 
-  const goToNextClip = useCallback(() => {
-    if (!clips || clips.length === 0) return;
-    const currentIndex = clips.findIndex((clip) => clip.id === selectedClipId);
-    if (currentIndex < clips.length - 1) {
-      setSelectedClipId(clips[currentIndex + 1].id);
+  const goToNextItem = useCallback(() => {
+    if (!mediaItems || mediaItems.length === 0 || !selectedItem) return;
+    const currentIndex = mediaItems.findIndex(
+      (item) => item.type === selectedItem.type && item.id === selectedItem.id,
+    );
+    if (currentIndex < mediaItems.length - 1) {
+      const nextItem = mediaItems[currentIndex + 1];
+      setSelectedItem({ type: nextItem.type, id: nextItem.id });
       setShouldAutoplay(true);
     }
-  }, [clips, selectedClipId]);
+  }, [mediaItems, selectedItem]);
 
   const seekBackward = useCallback(() => {
     if (mobilePlayerRef.current?.player) {
@@ -378,8 +443,9 @@ export default function EventDetailPage({
       width: number | null;
       height: number | null;
     }) => {
-      // Only save metadata if clip is missing it and user is a coach
-      if (!selectedClipId || team?.role !== "coach") return;
+      // Only save metadata if it's a clip (not segment), is missing metadata, and user is a coach
+      if (!selectedItem || selectedItem.type !== "clip" || team?.role !== "coach")
+        return;
       if (!selectedClip) return;
 
       // Check if any metadata is missing
@@ -392,15 +458,20 @@ export default function EventDetailPage({
       if (needsUpdate) {
         updateMetadata.mutate({
           teamId: teamIdNum,
-          clipId: selectedClipId,
+          clipId: selectedItem.id,
           ...(metadata.duration ? { durationS: metadata.duration } : {}),
           ...(metadata.width ? { width: metadata.width } : {}),
           ...(metadata.height ? { height: metadata.height } : {}),
         });
       }
     },
-    [selectedClipId, selectedClip, team?.role, teamIdNum, updateMetadata],
+    [selectedItem, selectedClip, team?.role, teamIdNum, updateMetadata],
   );
+
+  // Handle time update for segment creation
+  const handleTimeUpdate = useCallback((time: number) => {
+    setCurrentTime(time);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -427,7 +498,7 @@ export default function EventDetailPage({
       // Open tag dialog: t
       if (e.key === "t") {
         e.preventDefault();
-        if (selectedClipId) {
+        if (selectedItem) {
           setIsTagDialogOpen(true);
         }
         return;
@@ -436,8 +507,8 @@ export default function EventDetailPage({
       // Open rename dialog: r
       if (e.key === "r") {
         e.preventDefault();
-        if (selectedClipId) {
-          setNameInput(selectedClip?.name ?? "");
+        if (selectedItem) {
+          setNameInput(selectedMedia?.name ?? "");
           setIsRenameDialogOpen(true);
         }
         return;
@@ -457,27 +528,55 @@ export default function EventDetailPage({
         return;
       }
 
-      if (!clips || clips.length === 0) return;
+      // Segment creation shortcuts (only for clips)
+      if (e.key === "i" && selectedMedia?.type === "clip" && isCreatingSegment) {
+        e.preventDefault();
+        setSegmentMarkIn(currentTime);
+        // Clear mark out if it's before mark in
+        if (segmentMarkOut !== null && currentTime >= segmentMarkOut) {
+          setSegmentMarkOut(null);
+        }
+        return;
+      }
 
-      const currentIndex = clips.findIndex(
-        (clip) => clip.id === selectedClipId,
-      );
+      if (e.key === "o" && selectedMedia?.type === "clip" && isCreatingSegment) {
+        e.preventDefault();
+        if (segmentMarkIn !== null && currentTime > segmentMarkIn) {
+          setSegmentMarkOut(currentTime);
+        }
+        return;
+      }
 
-      // Clip navigation: j/k or ArrowDown/ArrowUp
+      if (!mediaItems || mediaItems.length === 0) return;
+
+      const currentIndex = selectedItem
+        ? mediaItems.findIndex(
+            (item) =>
+              item.type === selectedItem.type && item.id === selectedItem.id,
+          )
+        : -1;
+
+      // Item navigation: j/k or ArrowDown/ArrowUp
       if (e.key === "j" || e.key === "ArrowDown") {
         e.preventDefault();
         if (currentIndex === -1) {
-          setSelectedClipId(clips[0].id);
-        } else if (currentIndex < clips.length - 1) {
-          setSelectedClipId(clips[currentIndex + 1].id);
+          setSelectedItem({
+            type: mediaItems[0].type,
+            id: mediaItems[0].id,
+          });
+        } else if (currentIndex < mediaItems.length - 1) {
+          const nextItem = mediaItems[currentIndex + 1];
+          setSelectedItem({ type: nextItem.type, id: nextItem.id });
         }
         setShouldAutoplay(true);
       } else if (e.key === "k" || e.key === "ArrowUp") {
         e.preventDefault();
         if (currentIndex === -1) {
-          setSelectedClipId(clips[clips.length - 1].id);
+          const lastItem = mediaItems[mediaItems.length - 1];
+          setSelectedItem({ type: lastItem.type, id: lastItem.id });
         } else if (currentIndex > 0) {
-          setSelectedClipId(clips[currentIndex - 1].id);
+          const prevItem = mediaItems[currentIndex - 1];
+          setSelectedItem({ type: prevItem.type, id: prevItem.id });
         }
         setShouldAutoplay(true);
       }
@@ -499,12 +598,16 @@ export default function EventDetailPage({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
-    clips,
-    selectedClipId,
-    selectedClip,
+    mediaItems,
+    selectedItem,
+    selectedMedia,
     seekBackward,
     seekForward,
     togglePlayPause,
+    isCreatingSegment,
+    currentTime,
+    segmentMarkIn,
+    segmentMarkOut,
   ]);
 
   return (
@@ -589,50 +692,76 @@ export default function EventDetailPage({
         <div className="sticky top-0 z-10 bg-background md:hidden">
           <Card className="rounded-none border-x-0">
             <CardContent className="p-0">
-              {typeof "window" !== "undefined" && selectedClip ? (
-                selectedClip.status === "ready" && selectedClip.hlsPrefix ? (
-                  <VidstackPlayer
-                    ref={mobilePlayerRef}
-                    key={selectedClip.id}
-                    src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
-                    autoplay={shouldAutoplay}
-                    muted={true}
-                    loop={true}
-                    onPlay={handlePlay}
-                    onPause={handlePause}
-                    onLoadedMetadata={handleLoadedMetadata}
-                    onNextClip={goToNextClip}
-                    onPreviousClip={goToPreviousClip}
-                    title={selectedClip.name ?? `Clip #${selectedClip.index}`}
-                    tags={selectedClip.tags?.map((t) => t.tag) ?? []}
-                  />
-                ) : selectedClip.storageKey ? (
-                  <VidstackPlayer
-                    ref={mobilePlayerRef}
-                    key={selectedClip.id}
-                    src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.storageKey}`}
-                    autoplay={shouldAutoplay}
-                    muted={true}
-                    loop={true}
-                    onPlay={handlePlay}
-                    onPause={handlePause}
-                    onLoadedMetadata={handleLoadedMetadata}
-                    onNextClip={goToNextClip}
-                    onPreviousClip={goToPreviousClip}
-                    title={selectedClip.name ?? `Clip #${selectedClip.index}`}
-                    tags={selectedClip.tags?.map((t) => t.tag) ?? []}
-                  />
-                ) : (
-                  <div className="aspect-video bg-muted flex items-center justify-center">
-                    <p className="text-muted-foreground">
-                      {selectedClip.status === "processing"
-                        ? "Processing..."
-                        : selectedClip.status === "failed"
-                          ? "Processing failed"
-                          : "Waiting for upload"}
-                    </p>
-                  </div>
-                )
+              {typeof "window" !== "undefined" && selectedMedia ? (
+                (() => {
+                  // Determine video source and status based on item type
+                  const isSegment = selectedMedia.type === "segment";
+                  const sourceClip = isSegment ? selectedMedia.clip : selectedMedia;
+                  const status = sourceClip?.status;
+                  const hlsPrefix = sourceClip?.hlsPrefix;
+                  const storageKey = sourceClip?.storageKey;
+                  const displayName =
+                    selectedMedia.name ??
+                    (isSegment
+                      ? `Segment #${selectedMedia.index}`
+                      : `Clip #${selectedMedia.index}`);
+
+                  if (status === "ready" && hlsPrefix) {
+                    return (
+                      <VidstackPlayer
+                        ref={mobilePlayerRef}
+                        key={`${selectedMedia.type}-${selectedMedia.id}`}
+                        src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${hlsPrefix}master.m3u8`}
+                        autoplay={shouldAutoplay}
+                        muted={true}
+                        loop={true}
+                        onPlay={handlePlay}
+                        onPause={handlePause}
+                        onTimeUpdate={handleTimeUpdate}
+                        onLoadedMetadata={handleLoadedMetadata}
+                        onNextClip={goToNextItem}
+                        onPreviousClip={goToPreviousItem}
+                        title={displayName}
+                        tags={selectedMedia.tags?.map((t) => t.tag) ?? []}
+                        segmentStart={isSegment ? selectedMedia.startS : undefined}
+                        segmentEnd={isSegment ? selectedMedia.endS : undefined}
+                      />
+                    );
+                  }
+                  if (storageKey) {
+                    return (
+                      <VidstackPlayer
+                        ref={mobilePlayerRef}
+                        key={`${selectedMedia.type}-${selectedMedia.id}`}
+                        src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${storageKey}`}
+                        autoplay={shouldAutoplay}
+                        muted={true}
+                        loop={true}
+                        onPlay={handlePlay}
+                        onPause={handlePause}
+                        onTimeUpdate={handleTimeUpdate}
+                        onLoadedMetadata={handleLoadedMetadata}
+                        onNextClip={goToNextItem}
+                        onPreviousClip={goToPreviousItem}
+                        title={displayName}
+                        tags={selectedMedia.tags?.map((t) => t.tag) ?? []}
+                        segmentStart={isSegment ? selectedMedia.startS : undefined}
+                        segmentEnd={isSegment ? selectedMedia.endS : undefined}
+                      />
+                    );
+                  }
+                  return (
+                    <div className="aspect-video bg-muted flex items-center justify-center">
+                      <p className="text-muted-foreground">
+                        {status === "processing"
+                          ? "Processing..."
+                          : status === "failed"
+                            ? "Processing failed"
+                            : "Waiting for upload"}
+                      </p>
+                    </div>
+                  );
+                })()
               ) : (
                 <div className="aspect-video bg-muted flex items-center justify-center">
                   <p className="text-muted-foreground">Select a clip to play</p>
@@ -646,11 +775,15 @@ export default function EventDetailPage({
             <Button
               variant="outline"
               size="icon"
-              onClick={goToPreviousClip}
+              onClick={goToPreviousItem}
               disabled={
-                !clips ||
-                clips.length === 0 ||
-                clips.findIndex((clip) => clip.id === selectedClipId) === 0
+                !mediaItems ||
+                mediaItems.length === 0 ||
+                !selectedItem ||
+                mediaItems.findIndex(
+                  (item) =>
+                    item.type === selectedItem.type && item.id === selectedItem.id,
+                ) === 0
               }
             >
               <ChevronUp className="h-5 w-5" />
@@ -659,7 +792,7 @@ export default function EventDetailPage({
               variant="outline"
               size="icon"
               onClick={seekBackward}
-              disabled={!selectedClip}
+              disabled={!selectedMedia}
             >
               <RotateCcw className="h-5 w-5" />
             </Button>
@@ -667,7 +800,7 @@ export default function EventDetailPage({
               variant="outline"
               size="icon"
               onClick={togglePlayPause}
-              disabled={!selectedClip}
+              disabled={!selectedMedia}
             >
               {isPlaying ? (
                 <Pause className="h-5 w-5" />
@@ -679,19 +812,23 @@ export default function EventDetailPage({
               variant="outline"
               size="icon"
               onClick={seekForward}
-              disabled={!selectedClip}
+              disabled={!selectedMedia}
             >
               <RotateCw className="h-5 w-5" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              onClick={goToNextClip}
+              onClick={goToNextItem}
               disabled={
-                !clips ||
-                clips.length === 0 ||
-                clips.findIndex((clip) => clip.id === selectedClipId) ===
-                  clips.length - 1
+                !mediaItems ||
+                mediaItems.length === 0 ||
+                !selectedItem ||
+                mediaItems.findIndex(
+                  (item) =>
+                    item.type === selectedItem.type && item.id === selectedItem.id,
+                ) ===
+                  mediaItems.length - 1
               }
             >
               <ChevronDown className="h-5 w-5" />
@@ -713,55 +850,76 @@ export default function EventDetailPage({
               <div className="md:flex-1">
                 <Card className="flex-1">
                   <CardContent className="p-0">
-                    {typeof "window" !== "undefined" && selectedClip ? (
-                      selectedClip.status === "ready" &&
-                      selectedClip.hlsPrefix ? (
-                        <VidstackPlayer
-                          ref={desktopPlayerRef}
-                          key={selectedClip.id}
-                          src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.hlsPrefix}master.m3u8`}
-                          autoplay={shouldAutoplay}
-                          muted={true}
-                          loop={true}
-                          onPlay={handlePlay}
-                          onPause={handlePause}
-                          onLoadedMetadata={handleLoadedMetadata}
-                          onNextClip={goToNextClip}
-                          onPreviousClip={goToPreviousClip}
-                          title={
-                            selectedClip.name ?? `Clip #${selectedClip.index}`
-                          }
-                          tags={selectedClip.tags?.map((t) => t.tag) ?? []}
-                        />
-                      ) : selectedClip.storageKey ? (
-                        <VidstackPlayer
-                          ref={desktopPlayerRef}
-                          key={selectedClip.id}
-                          src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${selectedClip.storageKey}`}
-                          autoplay={shouldAutoplay}
-                          muted={true}
-                          loop={true}
-                          onPlay={handlePlay}
-                          onPause={handlePause}
-                          onLoadedMetadata={handleLoadedMetadata}
-                          onNextClip={goToNextClip}
-                          onPreviousClip={goToPreviousClip}
-                          title={
-                            selectedClip.name ?? `Clip #${selectedClip.index}`
-                          }
-                          tags={selectedClip.tags?.map((t) => t.tag) ?? []}
-                        />
-                      ) : (
-                        <div className="aspect-video bg-muted flex items-center justify-center">
-                          <p className="text-muted-foreground">
-                            {selectedClip.status === "processing"
-                              ? "Processing..."
-                              : selectedClip.status === "failed"
-                                ? "Processing failed"
-                                : "Waiting for upload"}
-                          </p>
-                        </div>
-                      )
+                    {typeof "window" !== "undefined" && selectedMedia ? (
+                      (() => {
+                        // Determine video source and status based on item type
+                        const isSegment = selectedMedia.type === "segment";
+                        const sourceClip = isSegment ? selectedMedia.clip : selectedMedia;
+                        const status = sourceClip?.status;
+                        const hlsPrefix = sourceClip?.hlsPrefix;
+                        const storageKey = sourceClip?.storageKey;
+                        const displayName =
+                          selectedMedia.name ??
+                          (isSegment
+                            ? `Segment #${selectedMedia.index}`
+                            : `Clip #${selectedMedia.index}`);
+
+                        if (status === "ready" && hlsPrefix) {
+                          return (
+                            <VidstackPlayer
+                              ref={desktopPlayerRef}
+                              key={`${selectedMedia.type}-${selectedMedia.id}`}
+                              src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${hlsPrefix}master.m3u8`}
+                              autoplay={shouldAutoplay}
+                              muted={true}
+                              loop={true}
+                              onPlay={handlePlay}
+                              onPause={handlePause}
+                              onTimeUpdate={handleTimeUpdate}
+                              onLoadedMetadata={handleLoadedMetadata}
+                              onNextClip={goToNextItem}
+                              onPreviousClip={goToPreviousItem}
+                              title={displayName}
+                              tags={selectedMedia.tags?.map((t) => t.tag) ?? []}
+                              segmentStart={isSegment ? selectedMedia.startS : undefined}
+                              segmentEnd={isSegment ? selectedMedia.endS : undefined}
+                            />
+                          );
+                        }
+                        if (storageKey) {
+                          return (
+                            <VidstackPlayer
+                              ref={desktopPlayerRef}
+                              key={`${selectedMedia.type}-${selectedMedia.id}`}
+                              src={`${env.NEXT_PUBLIC_ASSETS_BASE}/${storageKey}`}
+                              autoplay={shouldAutoplay}
+                              muted={true}
+                              loop={true}
+                              onPlay={handlePlay}
+                              onPause={handlePause}
+                              onTimeUpdate={handleTimeUpdate}
+                              onLoadedMetadata={handleLoadedMetadata}
+                              onNextClip={goToNextItem}
+                              onPreviousClip={goToPreviousItem}
+                              title={displayName}
+                              tags={selectedMedia.tags?.map((t) => t.tag) ?? []}
+                              segmentStart={isSegment ? selectedMedia.startS : undefined}
+                              segmentEnd={isSegment ? selectedMedia.endS : undefined}
+                            />
+                          );
+                        }
+                        return (
+                          <div className="aspect-video bg-muted flex items-center justify-center">
+                            <p className="text-muted-foreground">
+                              {status === "processing"
+                                ? "Processing..."
+                                : status === "failed"
+                                  ? "Processing failed"
+                                  : "Waiting for upload"}
+                            </p>
+                          </div>
+                        );
+                      })()
                     ) : (
                       <div className="aspect-video bg-muted flex items-center justify-center">
                         <p className="text-muted-foreground">
@@ -771,13 +929,50 @@ export default function EventDetailPage({
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Segment Creator - only show for clips, when coach */}
+                {team?.role === "coach" && selectedMedia?.type === "clip" && (
+                  <div className="mt-4">
+                    {isCreatingSegment ? (
+                      <SegmentCreator
+                        clipId={selectedMedia.id}
+                        clipDuration={selectedMedia.durationS}
+                        teamId={teamIdNum}
+                        eventId={eventIdNum}
+                        currentTime={currentTime}
+                        onSegmentCreated={() => {
+                          setIsCreatingSegment(false);
+                          setSegmentMarkIn(null);
+                          setSegmentMarkOut(null);
+                          refetchMedia();
+                        }}
+                        onCancel={() => {
+                          setIsCreatingSegment(false);
+                          setSegmentMarkIn(null);
+                          setSegmentMarkOut(null);
+                        }}
+                      />
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsCreatingSegment(true)}
+                      >
+                        <Scissors className="h-4 w-4 mr-2" />
+                        Create Segment
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Comments Section */}
               <CommentSection
                 ref={commentSectionRef}
                 teamId={teamIdNum}
-                clipId={selectedClipId}
+                clipId={selectedItem?.type === "clip" ? selectedItem.id : undefined}
+                segmentId={selectedItem?.type === "segment" ? selectedItem.id : undefined}
+                itemType={selectedItem?.type}
                 isCoach={team?.role === "coach"}
               />
             </div>
@@ -786,7 +981,9 @@ export default function EventDetailPage({
             <div className="md:hidden">
               <CommentSection
                 teamId={teamIdNum}
-                clipId={selectedClipId}
+                clipId={selectedItem?.type === "clip" ? selectedItem.id : undefined}
+                segmentId={selectedItem?.type === "segment" ? selectedItem.id : undefined}
+                itemType={selectedItem?.type}
                 isCoach={team?.role === "coach"}
               />
             </div>
@@ -794,27 +991,27 @@ export default function EventDetailPage({
             {/* Data Table Section */}
             <DataTable
               columns={columns}
-              data={clips ?? []}
+              data={mediaItems ?? []}
               onDeleteSelected={handleDeleteSelected}
               onRowClick={handleRowClick}
-              selectedId={selectedClipId}
+              selectedId={selectedItem?.id}
             />
           </>
         )}
       </div>
 
       <AlertDialog
-        open={clipsToDelete.length > 0}
-        onOpenChange={(open: boolean) => !open && setClipsToDelete([])}
+        open={itemsToDelete.length > 0}
+        onOpenChange={(open: boolean) => !open && setItemsToDelete([])}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Delete Clip{clipsToDelete.length > 1 ? "s" : ""}
+              Delete {itemsToDelete.length > 1 ? "Items" : "Item"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {clipsToDelete.length} clip
-              {clipsToDelete.length > 1 ? "s" : ""}? This action cannot be
+              Are you sure you want to delete {itemsToDelete.length} item
+              {itemsToDelete.length > 1 ? "s" : ""}? This action cannot be
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -930,16 +1127,16 @@ export default function EventDetailPage({
           <DialogHeader>
             <DialogTitle>Add Tags</DialogTitle>
             <DialogDescription>
-              Add tags to {selectedClip?.name ?? `Clip #${selectedClip?.index}`}
+              Add tags to {selectedMedia?.name ?? (selectedMedia?.type === "segment" ? `Segment #${selectedMedia?.index}` : `Clip #${selectedMedia?.index}`)}
               . Separate multiple tags with commas.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {selectedClip?.tags && selectedClip.tags.length > 0 && (
+            {selectedMedia?.tags && selectedMedia.tags.length > 0 && (
               <div>
                 <p className="text-sm font-medium mb-2">Current tags:</p>
                 <div className="flex flex-wrap gap-1">
-                  {selectedClip.tags.map((tag) => (
+                  {selectedMedia.tags.map((tag) => (
                     <Badge
                       key={tag.id}
                       variant="outline"
@@ -994,10 +1191,10 @@ export default function EventDetailPage({
       <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename Clip</DialogTitle>
+            <DialogTitle>Rename {selectedMedia?.type === "segment" ? "Segment" : "Clip"}</DialogTitle>
             <DialogDescription>
               Set a name for{" "}
-              {selectedClip?.name ?? `Clip #${selectedClip?.index}`}
+              {selectedMedia?.name ?? (selectedMedia?.type === "segment" ? `Segment #${selectedMedia?.index}` : `Clip #${selectedMedia?.index}`)}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

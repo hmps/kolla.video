@@ -87,6 +87,17 @@ export const sharesRouter = router({
                   },
                 },
               },
+              segments: {
+                with: {
+                  clip: true,
+                  tags: true,
+                  players: {
+                    with: {
+                      player: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },

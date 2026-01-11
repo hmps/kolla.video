@@ -28,7 +28,9 @@ import { useTRPC } from "@/trpc/client";
 
 interface CommentSectionProps {
   teamId: number;
-  clipId: number | null;
+  clipId?: number | null;
+  segmentId?: number | null;
+  itemType?: "clip" | "segment";
   isCoach: boolean;
 }
 
@@ -39,7 +41,7 @@ export interface CommentSectionRef {
 
 export const CommentSection = memo(
   forwardRef<CommentSectionRef, CommentSectionProps>(function CommentSection(
-    { teamId, clipId, isCoach },
+    { teamId, clipId, segmentId, itemType = "clip", isCoach },
     ref,
   ) {
     const [commentText, setCommentText] = useState("");
@@ -51,6 +53,10 @@ export const CommentSection = memo(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const trpc = useTRPC();
+
+    // Determine item ID based on type
+    const itemId = itemType === "segment" ? segmentId : clipId;
+    const hasValidItem = itemId !== null && itemId !== undefined;
 
     // Detect and handle comment level commands
     useEffect(() => {
@@ -65,10 +71,11 @@ export const CommentSection = memo(
       }
     }, [commentText]);
 
+    // Clip comments query
     const {
-      data: comments,
-      refetch: refetchComments,
-      isLoading: isLoadingComments,
+      data: clipComments,
+      refetch: refetchClipComments,
+      isLoading: isLoadingClipComments,
     } = useQuery(
       trpc.comments.byClip.queryOptions(
         {
@@ -76,10 +83,32 @@ export const CommentSection = memo(
           clipId: clipId ?? 0,
         },
         {
-          enabled: clipId !== null,
+          enabled: itemType === "clip" && clipId !== null,
         },
       ),
     );
+
+    // Segment comments query
+    const {
+      data: segmentComments,
+      refetch: refetchSegmentComments,
+      isLoading: isLoadingSegmentComments,
+    } = useQuery(
+      trpc.comments.bySegment.queryOptions(
+        {
+          teamId,
+          segmentId: segmentId ?? 0,
+        },
+        {
+          enabled: itemType === "segment" && segmentId !== null,
+        },
+      ),
+    );
+
+    // Use the appropriate comments and loading state
+    const comments = itemType === "segment" ? segmentComments : clipComments;
+    const isLoadingComments = itemType === "segment" ? isLoadingSegmentComments : isLoadingClipComments;
+    const refetchComments = itemType === "segment" ? refetchSegmentComments : refetchClipComments;
 
     const [isOpen, setIsOpen] = useState(
       () => (comments && comments.length > 0) || false,
@@ -112,12 +141,13 @@ export const CommentSection = memo(
           teamId,
         },
         {
-          enabled: isCoach && clipId !== null,
+          enabled: isCoach && hasValidItem,
         },
       ),
     );
 
-    const addComment = useMutation(
+    // Clip comment mutation
+    const addClipComment = useMutation(
       trpc.comments.add.mutationOptions({
         onSuccess: () => {
           setCommentText("");
@@ -128,9 +158,23 @@ export const CommentSection = memo(
       }),
     );
 
+    // Segment comment mutation
+    const addSegmentComment = useMutation(
+      trpc.comments.addToSegment.mutationOptions({
+        onSuccess: () => {
+          setCommentText("");
+          setCommentLevel("coaches");
+          setTargetUserId(undefined);
+          refetchComments();
+        },
+      }),
+    );
+
+    const addComment = itemType === "segment" ? addSegmentComment : addClipComment;
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      if (!clipId || !commentText.trim() || !isCoach) return;
+      if (!hasValidItem || !commentText.trim() || !isCoach) return;
       if (commentLevel === "private" && !targetUserId) return;
 
       // Remove command prefix if present
@@ -149,16 +193,26 @@ export const CommentSection = memo(
       // Don't submit if the comment is empty after removing the command
       if (!finalText) return;
 
-      addComment.mutate({
-        teamId,
-        clipId,
-        body: finalText,
-        level: commentLevel,
-        targetUserId,
-      });
+      if (itemType === "segment" && segmentId) {
+        addSegmentComment.mutate({
+          teamId,
+          segmentId,
+          body: finalText,
+          level: commentLevel,
+          targetUserId,
+        });
+      } else if (clipId) {
+        addClipComment.mutate({
+          teamId,
+          clipId,
+          body: finalText,
+          level: commentLevel,
+          targetUserId,
+        });
+      }
     };
 
-    if (!clipId) {
+    if (!hasValidItem) {
       return null;
     }
 

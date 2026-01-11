@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { clipPlayers, clips, clipTags, db, events } from "@kolla/db";
+import { clipPlayers, clips, clipTags, db, events, segments } from "@kolla/db";
 import { and, eq, max } from "drizzle-orm";
 import { z } from "zod";
 import { deleteFile, getPresignedUploadUrl } from "../../lib/storage";
@@ -26,6 +26,56 @@ export const clipsRouter = router({
         },
         orderBy: (clips, { asc }) => [asc(clips.index)],
       });
+    }),
+
+  // Returns unified list of clips and segments sorted by index
+  mediaByEvent: teamProcedure
+    .input(z.object({ teamId: z.number(), eventId: z.number() }))
+    .query(async ({ input }) => {
+      // Fetch clips
+      const clipsData = await db.query.clips.findMany({
+        where: and(
+          eq(clips.eventId, input.eventId),
+          eq(clips.teamId, input.teamId),
+        ),
+        with: {
+          tags: true,
+          players: {
+            with: {
+              player: true,
+            },
+          },
+          uploader: true,
+          comments: true,
+        },
+      });
+
+      // Fetch segments
+      const segmentsData = await db.query.segments.findMany({
+        where: and(
+          eq(segments.eventId, input.eventId),
+          eq(segments.teamId, input.teamId),
+        ),
+        with: {
+          clip: true,
+          tags: true,
+          players: {
+            with: {
+              player: true,
+            },
+          },
+          creator: true,
+          comments: true,
+        },
+      });
+
+      // Transform to unified type and sort by index
+      const unified = [
+        ...clipsData.map((c) => ({ ...c, type: "clip" as const })),
+        ...segmentsData.map((s) => ({ ...s, type: "segment" as const })),
+      ].sort((a, b) => a.index - b.index);
+
+      return unified;
     }),
 
   getNextIndex: teamProcedure

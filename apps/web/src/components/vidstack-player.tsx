@@ -38,6 +38,9 @@ interface VidstackPlayerProps {
   onPreviousClip?: () => void;
   title?: string;
   tags?: string[];
+  // Segment boundary props
+  segmentStart?: number; // Start time in seconds for segments
+  segmentEnd?: number; // End time in seconds for segments
 }
 
 export interface VidstackPlayerRef {
@@ -63,25 +66,42 @@ export const VidstackPlayer = memo(
       loop = true,
       title,
       tags,
+      segmentStart,
+      segmentEnd,
     },
     ref,
   ) {
     const playerRef = useRef<MediaPlayerInstance>(null);
+    const hasSeekToStartRef = useRef(false);
 
     // Expose player instance via ref
     useImperativeHandle(ref, () => ({
       player: playerRef.current,
     }));
 
-    // Handle autoplay when source or autoplay prop changes
+    // Reset seek flag when src changes
+    useEffect(() => {
+      hasSeekToStartRef.current = false;
+    }, [src]);
+
+    // Handle autoplay and initial seek for segments
     useEffect(() => {
       const player = playerRef.current;
-      if (!player || !autoplay) return;
+      if (!player) return;
 
       const handleCanPlay = () => {
-        player.play().catch((error) => {
-          console.warn("Autoplay failed:", error);
-        });
+        // Seek to segment start if defined and not already done
+        if (segmentStart !== undefined && !hasSeekToStartRef.current) {
+          player.currentTime = segmentStart;
+          hasSeekToStartRef.current = true;
+        }
+
+        // Auto play if requested
+        if (autoplay) {
+          player.play().catch((error) => {
+            console.warn("Autoplay failed:", error);
+          });
+        }
       };
 
       player.addEventListener("can-play", handleCanPlay);
@@ -89,21 +109,37 @@ export const VidstackPlayer = memo(
       return () => {
         player.removeEventListener("can-play", handleCanPlay);
       };
-    }, [autoplay]);
+    }, [autoplay, segmentStart]);
 
-    // Handle event callbacks
+    // Handle event callbacks and segment boundary enforcement
     useEffect(() => {
       const player = playerRef.current;
       if (!player) return;
 
       const handleTimeUpdate = () => {
+        // Report time update
         if (onTimeUpdate) {
           onTimeUpdate(player.currentTime);
+        }
+
+        // Enforce segment end boundary
+        if (segmentEnd !== undefined && player.currentTime >= segmentEnd) {
+          if (loop && segmentStart !== undefined) {
+            // Loop back to segment start
+            player.currentTime = segmentStart;
+          } else {
+            // Pause at segment end
+            player.pause();
+            if (onEnded) {
+              onEnded();
+            }
+          }
         }
       };
 
       const handleEnded = () => {
-        if (onEnded) {
+        // Only call onEnded if we're not in segment mode (segment mode handles this in timeUpdate)
+        if (segmentEnd === undefined && onEnded) {
           onEnded();
         }
       };
@@ -145,7 +181,7 @@ export const VidstackPlayer = memo(
         player.removeEventListener("pause", handlePause);
         player.removeEventListener("loaded-metadata", handleLoadedMetadata);
       };
-    }, [onTimeUpdate, onEnded, onPlay, onPause, onLoadedMetadata]);
+    }, [onTimeUpdate, onEnded, onPlay, onPause, onLoadedMetadata, segmentStart, segmentEnd, loop]);
 
     const displayTitle = title
       ? tags && tags.length > 0

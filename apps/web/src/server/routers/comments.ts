@@ -1,4 +1,11 @@
-import { clips, comments, db, teamMemberships } from "@kolla/db";
+import {
+  clips,
+  comments,
+  db,
+  segmentComments,
+  segments,
+  teamMemberships,
+} from "@kolla/db";
 import { and, eq, or } from "drizzle-orm";
 import { z } from "zod";
 import { router, teamProcedure } from "../trpc";
@@ -134,6 +141,129 @@ export const commentsRouter = router({
       }
 
       await db.delete(comments).where(eq(comments.id, input.commentId));
+
+      return { success: true };
+    }),
+
+  // Segment comment endpoints
+  bySegment: teamProcedure
+    .input(z.object({ teamId: z.number(), segmentId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      // Verify segment belongs to team
+      const segment = await db.query.segments.findFirst({
+        where: and(
+          eq(segments.id, input.segmentId),
+          eq(segments.teamId, input.teamId),
+        ),
+      });
+
+      if (!segment) {
+        throw new Error("Segment not found");
+      }
+
+      const isCoach = ctx.membership.role === "coach";
+
+      // Build visibility filter based on user role
+      const visibilityFilter = isCoach
+        ? or(
+            eq(segmentComments.level, "all"),
+            eq(segmentComments.level, "coaches"),
+            eq(segmentComments.level, "private"),
+          )
+        : or(
+            eq(segmentComments.level, "all"),
+            and(
+              eq(segmentComments.level, "private"),
+              eq(segmentComments.targetUserId, ctx.user.id),
+            ),
+          );
+
+      return db.query.segmentComments.findMany({
+        where: and(
+          eq(segmentComments.segmentId, input.segmentId),
+          visibilityFilter,
+        ),
+        with: {
+          author: true,
+          targetUser: true,
+        },
+        orderBy: (segmentComments, { asc }) => [asc(segmentComments.createdAt)],
+      });
+    }),
+
+  addToSegment: teamProcedure
+    .input(
+      z.object({
+        teamId: z.number(),
+        segmentId: z.number(),
+        body: z.string().min(1),
+        level: z.enum(["all", "coaches", "private"]).default("coaches"),
+        targetUserId: z.number().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify user is a coach
+      if (ctx.membership.role !== "coach") {
+        throw new Error("Only coaches can add comments");
+      }
+
+      // Verify segment belongs to team
+      const segment = await db.query.segments.findFirst({
+        where: and(
+          eq(segments.id, input.segmentId),
+          eq(segments.teamId, input.teamId),
+        ),
+      });
+
+      if (!segment) {
+        throw new Error("Segment not found");
+      }
+
+      // Validate private comments have a target user
+      if (input.level === "private" && !input.targetUserId) {
+        throw new Error("Private comments must have a target user");
+      }
+
+      const [comment] = await db
+        .insert(segmentComments)
+        .values({
+          segmentId: input.segmentId,
+          authorId: ctx.user.id,
+          body: input.body,
+          level: input.level,
+          targetUserId: input.targetUserId,
+        })
+        .returning();
+
+      return comment;
+    }),
+
+  deleteSegmentComment: teamProcedure
+    .input(z.object({ teamId: z.number(), commentId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify user is a coach and owns the comment
+      const comment = await db.query.segmentComments.findFirst({
+        where: eq(segmentComments.id, input.commentId),
+        with: {
+          segment: true,
+        },
+      });
+
+      if (!comment) {
+        throw new Error("Comment not found");
+      }
+
+      if (comment.segment.teamId !== input.teamId) {
+        throw new Error("Comment not found");
+      }
+
+      if (ctx.membership.role !== "coach" || comment.authorId !== ctx.user.id) {
+        throw new Error("Only the comment author can delete it");
+      }
+
+      await db
+        .delete(segmentComments)
+        .where(eq(segmentComments.id, input.commentId));
 
       return { success: true };
     }),

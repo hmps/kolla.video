@@ -2,58 +2,95 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Plus, X } from "lucide-react";
+import { Film, Plus, Scissors, X } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useTRPC } from "@/trpc/client";
+import {
+  formatDuration,
+  getMediaDuration,
+  isSegment,
+} from "@/types/media-item";
 
-export type Clip = {
+// MediaItem type for unified clip/segment handling
+export type MediaItem = {
+  type: "clip" | "segment";
   id: number;
   index: number;
   name?: string | null;
-  status: string;
+  // Clip-specific fields
+  status?: string;
   durationS?: number | null;
+  // Segment-specific fields
+  startS?: number;
+  endS?: number;
+  clipId?: number;
+  clip?: {
+    id: number;
+    status: string;
+    durationS: number | null;
+  };
+  // Common fields
   tags?: Array<{ id: number; tag: string }>;
   comments?: Array<{ id: number }>;
 };
 
-const formatDuration = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-};
-
 function EditableNameCell({
-  clip,
+  item,
   index,
   isCoach,
 }: {
-  clip: Clip;
+  item: MediaItem;
   index: number;
   isCoach: boolean;
 }) {
   const params = useParams<{ teamId: string; eventId: string }>();
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(clip.name ?? "");
+  const [name, setName] = useState(item.name ?? "");
   const [optimisticName, setOptimisticName] = useState<string | null>(null);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Sync local state when clip.name changes (after successful update)
+  const isSegmentItem = item.type === "segment";
+
+  // Sync local state when item.name changes (after successful update)
   useEffect(() => {
     if (!isEditing && !optimisticName) {
-      setName(clip.name ?? "");
+      setName(item.name ?? "");
     }
-  }, [clip.name, isEditing, optimisticName]);
+  }, [item.name, isEditing, optimisticName]);
 
-  const updateName = useMutation(
+  const updateClipName = useMutation(
     trpc.clips.updateName.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.clips.byEvent.queryFilter({
+          trpc.clips.mediaByEvent.queryFilter({
+            teamId: Number(params.teamId),
+            eventId: Number(params.eventId),
+          }),
+        );
+        setOptimisticName(null);
+      },
+      onError: () => {
+        setOptimisticName(null);
+      },
+    }),
+  );
+
+  const updateSegmentName = useMutation(
+    trpc.segments.updateName.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.clips.mediaByEvent.queryFilter({
             teamId: Number(params.teamId),
             eventId: Number(params.eventId),
           }),
@@ -67,13 +104,21 @@ function EditableNameCell({
   );
 
   const handleSubmit = () => {
-    if (name.trim() && name !== clip.name) {
+    if (name.trim() && name !== item.name) {
       setOptimisticName(name.trim());
-      updateName.mutate({
-        teamId: Number(params.teamId),
-        clipId: clip.id,
-        name: name.trim(),
-      });
+      if (isSegmentItem) {
+        updateSegmentName.mutate({
+          teamId: Number(params.teamId),
+          segmentId: item.id,
+          name: name.trim(),
+        });
+      } else {
+        updateClipName.mutate({
+          teamId: Number(params.teamId),
+          clipId: item.id,
+          name: name.trim(),
+        });
+      }
     }
     setIsEditing(false);
   };
@@ -82,7 +127,7 @@ function EditableNameCell({
     if (e.key === "Enter") {
       handleSubmit();
     } else if (e.key === "Escape") {
-      setName(clip.name ?? "");
+      setName(item.name ?? "");
       setIsEditing(false);
     }
   };
@@ -102,7 +147,10 @@ function EditableNameCell({
     );
   }
 
-  const displayName = optimisticName ?? clip.name ?? `Clip #${index + 1}`;
+  const defaultName = isSegmentItem
+    ? `Segment #${index + 1}`
+    : `Clip #${index + 1}`;
+  const displayName = optimisticName ?? item.name ?? defaultName;
 
   if (!isCoach) {
     return (
@@ -126,7 +174,13 @@ function EditableNameCell({
   );
 }
 
-function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
+function EditableTagsCell({
+  item,
+  isCoach,
+}: {
+  item: MediaItem;
+  isCoach: boolean;
+}) {
   const params = useParams<{ teamId: string; eventId: string }>();
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -138,13 +192,31 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const currentTags = optimisticTags ?? clip.tags ?? [];
+  const isSegmentItem = item.type === "segment";
+  const currentTags = optimisticTags ?? item.tags ?? [];
 
-  const setTags = useMutation(
+  const setClipTags = useMutation(
     trpc.clips.setTags.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries(
-          trpc.clips.byEvent.queryFilter({
+          trpc.clips.mediaByEvent.queryFilter({
+            teamId: Number(params.teamId),
+            eventId: Number(params.eventId),
+          }),
+        );
+        setOptimisticTags(null);
+      },
+      onError: () => {
+        setOptimisticTags(null);
+      },
+    }),
+  );
+
+  const setSegmentTags = useMutation(
+    trpc.segments.setTags.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.clips.mediaByEvent.queryFilter({
             teamId: Number(params.teamId),
             eventId: Number(params.eventId),
           }),
@@ -188,11 +260,19 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
     setOptimisticTags(optimisticNewTags);
     setInputValue("");
 
-    setTags.mutate({
-      teamId: Number(params.teamId),
-      clipId: clip.id,
-      tags: allTagStrings,
-    });
+    if (isSegmentItem) {
+      setSegmentTags.mutate({
+        teamId: Number(params.teamId),
+        segmentId: item.id,
+        tags: allTagStrings,
+      });
+    } else {
+      setClipTags.mutate({
+        teamId: Number(params.teamId),
+        clipId: item.id,
+        tags: allTagStrings,
+      });
+    }
   };
 
   const removeTag = (tagToRemove: { id: number; tag: string }) => {
@@ -200,11 +280,19 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
     const newTags = currentTags.filter((t) => t.tag !== tagToRemove.tag);
     setOptimisticTags(newTags);
 
-    setTags.mutate({
-      teamId: Number(params.teamId),
-      clipId: clip.id,
-      tags: newTags.map((t) => t.tag),
-    });
+    if (isSegmentItem) {
+      setSegmentTags.mutate({
+        teamId: Number(params.teamId),
+        segmentId: item.id,
+        tags: newTags.map((t) => t.tag),
+      });
+    } else {
+      setClipTags.mutate({
+        teamId: Number(params.teamId),
+        clipId: item.id,
+        tags: newTags.map((t) => t.tag),
+      });
+    }
 
     // Reset the flag after a short delay
     setTimeout(() => {
@@ -319,7 +407,7 @@ function EditableTagsCell({ clip, isCoach }: { clip: Clip; isCoach: boolean }) {
   );
 }
 
-export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
+export const getColumns = (isCoach: boolean): ColumnDef<MediaItem>[] => [
   {
     id: "select",
     size: 25,
@@ -364,13 +452,41 @@ export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
     },
   },
   {
+    id: "type",
+    header: "",
+    size: 30,
+    maxSize: 30,
+    minSize: 30,
+    cell: ({ row }) => {
+      const item = row.original;
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-center">
+                {item.type === "segment" ? (
+                  <Scissors className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Film className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{item.type === "segment" ? "Segment" : "Clip"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    },
+  },
+  {
     accessorKey: "name",
     header: "Name",
     size: 300,
     cell: ({ row }) => {
-      const clip = row.original;
+      const item = row.original;
       const index = row.index;
-      return <EditableNameCell clip={clip} index={index} isCoach={isCoach} />;
+      return <EditableNameCell item={item} index={index} isCoach={isCoach} />;
     },
   },
   {
@@ -380,7 +496,12 @@ export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
     maxSize: 70,
     minSize: 70,
     cell: ({ row }) => {
-      const duration = row.original.durationS;
+      const item = row.original;
+      // For segments, calculate duration from startS and endS
+      const duration =
+        item.type === "segment" && item.startS !== undefined && item.endS !== undefined
+          ? item.endS - item.startS
+          : item.durationS;
 
       return (
         <div className="text-center text-muted-foreground text-sm">
@@ -394,8 +515,8 @@ export const getColumns = (isCoach: boolean): ColumnDef<Clip>[] => [
     header: "Tags",
     size: 400,
     cell: ({ row }) => {
-      const clip = row.original;
-      return <EditableTagsCell clip={clip} isCoach={isCoach} />;
+      const item = row.original;
+      return <EditableTagsCell item={item} isCoach={isCoach} />;
     },
   },
   {

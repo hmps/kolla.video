@@ -178,6 +178,74 @@ export const onboardingProgress = sqliteTable(
   }),
 );
 
+// Segments table - virtual clips within a source video
+export const segments = sqliteTable(
+  "segments",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    teamId: integer("team_id")
+      .notNull()
+      .references(() => teams.id),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => events.id),
+    clipId: integer("clip_id")
+      .notNull()
+      .references(() => clips.id, { onDelete: "cascade" }),
+    creatorId: integer("creator_id")
+      .notNull()
+      .references(() => users.id),
+    index: integer("index").notNull(),
+    name: text("name"),
+    startS: real("start_s").notNull(),
+    endS: real("end_s").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => ({
+    eventIndexUnique: unique().on(table.eventId, table.index),
+  }),
+);
+
+// Segment tags table
+export const segmentTags = sqliteTable("segment_tags", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  segmentId: integer("segment_id")
+    .notNull()
+    .references(() => segments.id, { onDelete: "cascade" }),
+  tag: text("tag").notNull(),
+});
+
+// Segment players join table
+export const segmentPlayers = sqliteTable("segment_players", {
+  segmentId: integer("segment_id")
+    .notNull()
+    .references(() => segments.id, { onDelete: "cascade" }),
+  playerId: integer("player_id")
+    .notNull()
+    .references(() => players.id),
+});
+
+// Segment comments table
+export const segmentComments = sqliteTable("segment_comments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  segmentId: integer("segment_id")
+    .notNull()
+    .references(() => segments.id, { onDelete: "cascade" }),
+  authorId: integer("author_id")
+    .notNull()
+    .references(() => users.id),
+  body: text("body").notNull(),
+  level: text("level", { enum: ["all", "coaches", "private"] })
+    .notNull()
+    .default("coaches"),
+  targetUserId: integer("target_user_id").references(() => users.id),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(teamMemberships),
@@ -212,6 +280,7 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
     references: [teams.id],
   }),
   clips: many(clips),
+  segments: many(segments),
   shareLinks: many(shareLinks),
 }));
 
@@ -231,6 +300,7 @@ export const clipsRelations = relations(clips, ({ one, many }) => ({
   tags: many(clipTags),
   players: many(clipPlayers),
   comments: many(comments),
+  segments: many(segments),
 }));
 
 export const clipTagsRelations = relations(clipTags, ({ one }) => ({
@@ -290,6 +360,64 @@ export const onboardingProgressRelations = relations(
   ({ one }) => ({
     user: one(users, {
       fields: [onboardingProgress.userId],
+      references: [users.id],
+    }),
+  }),
+);
+
+export const segmentsRelations = relations(segments, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [segments.teamId],
+    references: [teams.id],
+  }),
+  event: one(events, {
+    fields: [segments.eventId],
+    references: [events.id],
+  }),
+  clip: one(clips, {
+    fields: [segments.clipId],
+    references: [clips.id],
+  }),
+  creator: one(users, {
+    fields: [segments.creatorId],
+    references: [users.id],
+  }),
+  tags: many(segmentTags),
+  players: many(segmentPlayers),
+  comments: many(segmentComments),
+}));
+
+export const segmentTagsRelations = relations(segmentTags, ({ one }) => ({
+  segment: one(segments, {
+    fields: [segmentTags.segmentId],
+    references: [segments.id],
+  }),
+}));
+
+export const segmentPlayersRelations = relations(segmentPlayers, ({ one }) => ({
+  segment: one(segments, {
+    fields: [segmentPlayers.segmentId],
+    references: [segments.id],
+  }),
+  player: one(players, {
+    fields: [segmentPlayers.playerId],
+    references: [players.id],
+  }),
+}));
+
+export const segmentCommentsRelations = relations(
+  segmentComments,
+  ({ one }) => ({
+    segment: one(segments, {
+      fields: [segmentComments.segmentId],
+      references: [segments.id],
+    }),
+    author: one(users, {
+      fields: [segmentComments.authorId],
+      references: [users.id],
+    }),
+    targetUser: one(users, {
+      fields: [segmentComments.targetUserId],
       references: [users.id],
     }),
   }),

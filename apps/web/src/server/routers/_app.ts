@@ -6,6 +6,7 @@ import { dashboardRouter } from "./dashboard";
 import { eventsRouter } from "./events";
 import { onboardingRouter } from "./onboarding";
 import { playersRouter } from "./players";
+import { segmentsRouter } from "./segments";
 import { sharesRouter } from "./shares";
 import { teamsRouter } from "./teams";
 
@@ -15,6 +16,7 @@ export const appRouter = router({
   events: eventsRouter,
   players: playersRouter,
   clips: clipsRouter,
+  segments: segmentsRouter,
   comments: commentsRouter,
   shares: sharesRouter,
   dashboard: dashboardRouter,
