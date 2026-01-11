@@ -275,12 +275,14 @@ export const usersRelations = relations(users, ({ many }) => ({
   clips: many(clips),
   comments: many(comments),
   onboardingProgress: many(onboardingProgress),
+  playlists: many(playlists),
 }));
 
 export const teamsRelations = relations(teams, ({ many }) => ({
   memberships: many(teamMemberships),
   events: many(events),
   players: many(players),
+  playlists: many(playlists),
 }));
 
 export const teamMembershipsRelations = relations(
@@ -458,6 +460,106 @@ export const segmentCommentsRelations = relations(
     targetUser: one(users, {
       fields: [segmentComments.targetUserId],
       references: [users.id],
+    }),
+  }),
+);
+
+// Playlists table
+export const playlists = sqliteTable("playlists", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  teamId: integer("team_id")
+    .notNull()
+    .references(() => teams.id),
+  creatorId: integer("creator_id")
+    .notNull()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+// Playlist items table - polymorphic join to clips or segments
+export const playlistItems = sqliteTable(
+  "playlist_items",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    playlistId: integer("playlist_id")
+      .notNull()
+      .references(() => playlists.id, { onDelete: "cascade" }),
+    clipId: integer("clip_id").references(() => clips.id, { onDelete: "cascade" }),
+    segmentId: integer("segment_id").references(() => segments.id, {
+      onDelete: "cascade",
+    }),
+    position: integer("position").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => ({
+    playlistPositionUnique: unique().on(table.playlistId, table.position),
+  }),
+);
+
+// Playlist share links table
+export const playlistShareLinks = sqliteTable("playlist_share_links", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  playlistId: integer("playlist_id")
+    .notNull()
+    .references(() => playlists.id, { onDelete: "cascade" }),
+  teamId: integer("team_id")
+    .notNull()
+    .references(() => teams.id),
+  token: text("token").notNull().unique(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+// Playlist relations
+export const playlistsRelations = relations(playlists, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [playlists.teamId],
+    references: [teams.id],
+  }),
+  creator: one(users, {
+    fields: [playlists.creatorId],
+    references: [users.id],
+  }),
+  items: many(playlistItems),
+  shareLinks: many(playlistShareLinks),
+}));
+
+export const playlistItemsRelations = relations(playlistItems, ({ one }) => ({
+  playlist: one(playlists, {
+    fields: [playlistItems.playlistId],
+    references: [playlists.id],
+  }),
+  clip: one(clips, {
+    fields: [playlistItems.clipId],
+    references: [clips.id],
+  }),
+  segment: one(segments, {
+    fields: [playlistItems.segmentId],
+    references: [segments.id],
+  }),
+}));
+
+export const playlistShareLinksRelations = relations(
+  playlistShareLinks,
+  ({ one }) => ({
+    playlist: one(playlists, {
+      fields: [playlistShareLinks.playlistId],
+      references: [playlists.id],
+    }),
+    team: one(teams, {
+      fields: [playlistShareLinks.teamId],
+      references: [teams.id],
     }),
   }),
 );

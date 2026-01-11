@@ -85,6 +85,13 @@
       "when": 1768138118568,
       "tag": "0011_solid_sleepwalker",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1768139167358,
+      "tag": "0012_confused_yellowjacket",
+      "breakpoints": true
     }
   ]
 }

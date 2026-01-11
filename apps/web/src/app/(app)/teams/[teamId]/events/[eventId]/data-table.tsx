@@ -7,7 +7,7 @@ import {
   type RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
-import { Trash2 } from "lucide-react";
+import { ListPlus, Trash2 } from "lucide-react";
 import { memo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onDeleteSelected: (selectedIds: number[]) => void;
+  onAddToPlaylist?: (selectedIds: number[]) => void;
   onRowClick?: (row: TData) => void;
   selectedId?: number | null;
 }
@@ -31,6 +32,7 @@ function DataTableInner<TData extends { id: number }, TValue>({
   columns,
   data,
   onDeleteSelected,
+  onAddToPlaylist,
   onRowClick,
   selectedId,
 }: DataTableProps<TData, TValue>) {
@@ -54,6 +56,13 @@ function DataTableInner<TData extends { id: number }, TValue>({
     setRowSelection({});
   };
 
+  const handleAddToPlaylist = () => {
+    if (!onAddToPlaylist) return;
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const selectedIds = selectedRows.map((row) => row.original.id);
+    onAddToPlaylist(selectedIds);
+  };
+
   const selectedCount = Object.keys(rowSelection).length;
 
   return (
@@ -63,15 +72,28 @@ function DataTableInner<TData extends { id: number }, TValue>({
           <p className="text-sm text-muted-foreground">
             {selectedCount} clip{selectedCount > 1 ? "s" : ""} selected
           </p>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleDelete}
-            className="gap-2"
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete Selected
-          </Button>
+          <div className="flex gap-2">
+            {onAddToPlaylist && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddToPlaylist}
+                className="gap-2"
+              >
+                <ListPlus className="h-4 w-4" />
+                Add to Playlist
+              </Button>
+            )}
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDelete}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Selected
+            </Button>
+          </div>
         </div>
       )}
       <div className="rounded-md border max-h-[400px] overflow-y-auto">
@@ -169,6 +191,7 @@ export const DataTable = memo(DataTableInner, (prevProps, nextProps) => {
     prevProps.columns === nextProps.columns &&
     prevProps.selectedId === nextProps.selectedId &&
     prevProps.onDeleteSelected === nextProps.onDeleteSelected &&
+    prevProps.onAddToPlaylist === nextProps.onAddToPlaylist &&
     prevProps.onRowClick === nextProps.onRowClick
   );
 }) as typeof DataTableInner;

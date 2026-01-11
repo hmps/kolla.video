@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
   "/upload(.*)",
   "/api/trpc/uploadLinks(.*)",
   "/api/trpc/shares(.*)",
+  "/api/trpc/playlists.getViaToken(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

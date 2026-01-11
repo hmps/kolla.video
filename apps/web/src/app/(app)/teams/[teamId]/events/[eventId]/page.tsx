@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AddToPlaylistDialog } from "@/components/add-to-playlist-dialog";
 import {
   CommentSection,
   type CommentSectionRef,
@@ -122,6 +123,11 @@ export default function EventDetailPage({
   const [isUploadLinkDialogOpen, setIsUploadLinkDialogOpen] = useState(false);
   const [uploadLinkDuration, setUploadLinkDuration] = useState<"1" | "3" | "7" | "30">("1");
   const [copiedLinkId, setCopiedLinkId] = useState<number | null>(null);
+  // Playlist state
+  const [isAddToPlaylistOpen, setIsAddToPlaylistOpen] = useState(false);
+  const [itemsToAddToPlaylist, setItemsToAddToPlaylist] = useState<
+    Array<{ type: "clip" | "segment"; id: number }>
+  >([]);
   // Segment creation state
   const [currentTime, setCurrentTime] = useState(0);
   const [isCreatingSegment, setIsCreatingSegment] = useState(false);
@@ -373,6 +379,22 @@ export default function EventDetailPage({
         })
         .filter((x): x is { type: "clip" | "segment"; id: number } => x !== null);
       setItemsToDelete(items);
+    },
+    [mediaItems],
+  );
+
+  const handleAddToPlaylistSelected = useCallback(
+    (selectedIds: number[]) => {
+      if (selectedIds.length === 0 || !mediaItems) return;
+      // Map IDs to items with their types
+      const items = selectedIds
+        .map((id) => {
+          const item = mediaItems.find((m) => m.id === id);
+          return item ? { type: item.type, id } : null;
+        })
+        .filter((x): x is { type: "clip" | "segment"; id: number } => x !== null);
+      setItemsToAddToPlaylist(items);
+      setIsAddToPlaylistOpen(true);
     },
     [mediaItems],
   );
@@ -1156,6 +1178,9 @@ export default function EventDetailPage({
               columns={columns}
               data={mediaItems ?? []}
               onDeleteSelected={handleDeleteSelected}
+              onAddToPlaylist={
+                team?.role === "coach" ? handleAddToPlaylistSelected : undefined
+              }
               onRowClick={handleRowClick}
               selectedId={selectedItem?.id}
             />
@@ -1512,6 +1537,14 @@ export default function EventDetailPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AddToPlaylistDialog
+        open={isAddToPlaylistOpen}
+        onOpenChange={setIsAddToPlaylistOpen}
+        teamId={teamIdNum}
+        items={itemsToAddToPlaylist}
+        onSuccess={() => setItemsToAddToPlaylist([])}
+      />
     </>
   );
 }
