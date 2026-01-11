@@ -9,6 +9,7 @@ import { playersRouter } from "./players";
 import { segmentsRouter } from "./segments";
 import { sharesRouter } from "./shares";
 import { teamsRouter } from "./teams";
+import { uploadLinksRouter } from "./uploadLinks";
 
 export const appRouter = router({
   auth: authRouter,
@@ -21,6 +22,7 @@ export const appRouter = router({
   shares: sharesRouter,
   dashboard: dashboardRouter,
   onboarding: onboardingRouter,
+  uploadLinks: uploadLinksRouter,
 });
 
 export type AppRouter = typeof appRouter;

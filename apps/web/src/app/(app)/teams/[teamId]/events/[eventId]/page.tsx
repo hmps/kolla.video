@@ -3,9 +3,13 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
+  Check,
   ChevronDown,
   ChevronUp,
+  Clock,
+  Copy,
   Keyboard,
+  Link2,
   MoreVertical,
   Pause,
   Pencil,
@@ -13,6 +17,7 @@ import {
   RotateCcw,
   RotateCw,
   Scissors,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -26,6 +31,10 @@ import { EditEventDialog } from "@/components/edit-event-dialog";
 import { OnboardingDialog } from "@/components/onboarding-dialog";
 import { SegmentCreator } from "@/components/segment-creator";
 import type { MediaItem } from "./columns";
+import {
+  PendingClipsTable,
+  type PendingClip,
+} from "./pending-clips-table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +71,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
@@ -88,6 +105,8 @@ export default function EventDetailPage({
     type: "clip" | "segment";
     id: number;
   } | null>(null);
+  // Preview state for pending clips (shown in player but not in main list)
+  const [previewPendingClip, setPreviewPendingClip] = useState<PendingClip | null>(null);
   const [itemsToDelete, setItemsToDelete] = useState<
     Array<{ type: "clip" | "segment"; id: number }>
   >([]);
@@ -100,6 +119,9 @@ export default function EventDetailPage({
   const [nameInput, setNameInput] = useState("");
   const [isEditEventDialogOpen, setIsEditEventDialogOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isUploadLinkDialogOpen, setIsUploadLinkDialogOpen] = useState(false);
+  const [uploadLinkDuration, setUploadLinkDuration] = useState<"1" | "3" | "7" | "30">("1");
+  const [copiedLinkId, setCopiedLinkId] = useState<number | null>(null);
   // Segment creation state
   const [currentTime, setCurrentTime] = useState(0);
   const [isCreatingSegment, setIsCreatingSegment] = useState(false);
@@ -132,6 +154,20 @@ export default function EventDetailPage({
 
   const { data: onboardingProgress } = useQuery(
     trpc.onboarding.getProgress.queryOptions(),
+  );
+
+  const { data: uploadLinks, refetch: refetchUploadLinks } = useQuery(
+    trpc.uploadLinks.listByEvent.queryOptions({
+      teamId: teamIdNum,
+      eventId: eventIdNum,
+    }),
+  );
+
+  const { data: pendingClips, refetch: refetchPendingClips } = useQuery(
+    trpc.clips.pendingByEvent.queryOptions({
+      teamId: teamIdNum,
+      eventId: eventIdNum,
+    }),
   );
 
   const markOnboardingComplete = useMutation(
@@ -210,13 +246,110 @@ export default function EventDetailPage({
     }),
   );
 
-  // Find the currently selected media item
+  const createUploadLink = useMutation(
+    trpc.uploadLinks.create.mutationOptions({
+      onSuccess: () => {
+        refetchUploadLinks();
+      },
+    }),
+  );
+
+  const revokeUploadLink = useMutation(
+    trpc.uploadLinks.revoke.mutationOptions({
+      onSuccess: () => {
+        refetchUploadLinks();
+      },
+    }),
+  );
+
+  const approveClips = useMutation(
+    trpc.clips.approve.mutationOptions({
+      onSuccess: () => {
+        refetchPendingClips();
+        refetchMedia();
+        // Clear preview if the previewed clip was approved
+        setPreviewPendingClip(null);
+      },
+    }),
+  );
+
+  const rejectClip = useMutation(
+    trpc.clips.reject.mutationOptions({
+      onSuccess: () => {
+        refetchPendingClips();
+        // Clear preview if the previewed clip was rejected
+        setPreviewPendingClip(null);
+      },
+    }),
+  );
+
+  const handleApproveClips = useCallback((clipIds: number[]) => {
+    approveClips.mutate({
+      teamId: teamIdNum,
+      clipIds,
+    });
+  }, [approveClips, teamIdNum]);
+
+  const handleRejectClip = useCallback((clipId: number) => {
+    rejectClip.mutate({
+      teamId: teamIdNum,
+      clipId,
+    });
+  }, [rejectClip, teamIdNum]);
+
+  const handlePendingClipClick = useCallback((clip: PendingClip) => {
+    setPreviewPendingClip(clip);
+    setSelectedItem(null); // Clear regular selection
+    setShouldAutoplay(true);
+  }, []);
+
+  const handleCreateUploadLink = useCallback(() => {
+    createUploadLink.mutate({
+      teamId: teamIdNum,
+      eventId: eventIdNum,
+      durationDays: uploadLinkDuration,
+    });
+    setUploadLinkDuration("1");
+  }, [createUploadLink, teamIdNum, eventIdNum, uploadLinkDuration]);
+
+  const handleCopyUploadLink = useCallback((linkId: number, token: string) => {
+    const url = `${window.location.origin}/upload/${token}`;
+    navigator.clipboard.writeText(url);
+    setCopiedLinkId(linkId);
+    setTimeout(() => setCopiedLinkId(null), 2000);
+  }, []);
+
+  const handleRevokeUploadLink = useCallback((linkId: number) => {
+    revokeUploadLink.mutate({
+      teamId: teamIdNum,
+      uploadLinkId: linkId,
+    });
+  }, [revokeUploadLink, teamIdNum]);
+
+  // Find the currently selected media item (or use preview pending clip)
   const selectedMedia = useMemo(() => {
+    // If previewing a pending clip, create a display object for it
+    if (previewPendingClip) {
+      return {
+        type: "clip" as const,
+        id: previewPendingClip.id,
+        index: previewPendingClip.index,
+        name: previewPendingClip.name,
+        status: previewPendingClip.status,
+        storageKey: previewPendingClip.storageKey,
+        hlsPrefix: previewPendingClip.hlsPrefix,
+        durationS: null,
+        width: null,
+        height: null,
+        tags: [] as Array<{ id: number; tag: string }>,
+        comments: [] as Array<{ id: number }>,
+      };
+    }
     if (!selectedItem || !mediaItems) return null;
     return mediaItems.find(
       (item) => item.type === selectedItem.type && item.id === selectedItem.id,
     );
-  }, [mediaItems, selectedItem]);
+  }, [mediaItems, selectedItem, previewPendingClip]);
 
   // For backward compatibility - get as clip if it's a clip
   const selectedClip = useMemo(() => {
@@ -263,6 +396,7 @@ export default function EventDetailPage({
 
   const handleRowClick = useCallback((item: MediaItem) => {
     setSelectedItem({ type: item.type, id: item.id });
+    setPreviewPendingClip(null); // Clear pending clip preview
     setShouldAutoplay(true);
     // Clear segment creation mode when selecting a different item
     setIsCreatingSegment(false);
@@ -676,6 +810,12 @@ export default function EventDetailPage({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  onSelect={() => setIsUploadLinkDialogOpen(true)}
+                >
+                  <Link2 className="mr-2 h-4 w-4" />
+                  Upload Links
+                </DropdownMenuItem>
+                <DropdownMenuItem
                   onSelect={() => setIsEditEventDialogOpen(true)}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
@@ -988,6 +1128,29 @@ export default function EventDetailPage({
               />
             </div>
 
+            {/* Pending Clips Queue (coaches only) */}
+            {team?.role === "coach" && pendingClips && pendingClips.length > 0 && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Clock className="h-5 w-5 text-amber-500" />
+                    <h3 className="font-semibold">
+                      Clips Pending Approval
+                    </h3>
+                  </div>
+                  <PendingClipsTable
+                    data={pendingClips}
+                    onApprove={handleApproveClips}
+                    onReject={handleRejectClip}
+                    onRowClick={handlePendingClipClick}
+                    selectedId={previewPendingClip?.id}
+                    isApproving={approveClips.isPending}
+                    isRejecting={rejectClip.isPending}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
             {/* Data Table Section */}
             <DataTable
               columns={columns}
@@ -1243,6 +1406,112 @@ export default function EventDetailPage({
         open={isOnboardingOpen}
         onComplete={handleOnboardingComplete}
       />
+
+      <Dialog open={isUploadLinkDialogOpen} onOpenChange={setIsUploadLinkDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Links</DialogTitle>
+            <DialogDescription>
+              Create shareable links for others to upload video clips to this event.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Create new link section */}
+            <div className="space-y-3">
+              <Label>Create New Link</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={uploadLinkDuration}
+                  onValueChange={(value: "1" | "3" | "7" | "30") => setUploadLinkDuration(value)}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 day</SelectItem>
+                    <SelectItem value="3">3 days</SelectItem>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={handleCreateUploadLink}
+                  disabled={createUploadLink.isPending}
+                >
+                  {createUploadLink.isPending ? "Creating..." : "Create Link"}
+                </Button>
+              </div>
+            </div>
+
+            {/* Existing links section */}
+            {uploadLinks && uploadLinks.length > 0 && (
+              <div className="space-y-3">
+                <Label>Active Links</Label>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {uploadLinks.map((link) => {
+                    const isExpired = new Date(link.expiresAt) < new Date();
+                    return (
+                      <div
+                        key={link.id}
+                        className={`flex items-center justify-between p-3 border rounded-lg ${
+                          isExpired ? "opacity-50" : ""
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-mono truncate">
+                            ...{link.token.slice(-8)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {isExpired ? (
+                              "Expired"
+                            ) : (
+                              <>Expires {format(new Date(link.expiresAt), "PPp")}</>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 ml-2">
+                          {!isExpired && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleCopyUploadLink(link.id, link.token)}
+                            >
+                              {copiedLinkId === link.id ? (
+                                <Check className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRevokeUploadLink(link.id)}
+                            disabled={revokeUploadLink.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {uploadLinks && uploadLinks.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No upload links yet. Create one above.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUploadLinkDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

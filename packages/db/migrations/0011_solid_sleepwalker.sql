@@ -1,0 +1,1 @@
+ALTER TABLE `clips` ADD `approval_status` text DEFAULT 'approved' NOT NULL;

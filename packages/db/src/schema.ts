@@ -70,9 +70,8 @@ export const clips = sqliteTable(
     eventId: integer("event_id")
       .notNull()
       .references(() => events.id),
-    uploaderId: integer("uploader_id")
-      .notNull()
-      .references(() => users.id),
+    uploaderId: integer("uploader_id").references(() => users.id),
+    uploaderName: text("uploader_name"),
     index: integer("index").notNull(),
     name: text("name"),
     storageKey: text("storage_key").notNull(),
@@ -83,6 +82,11 @@ export const clips = sqliteTable(
     status: text("status", {
       enum: ["uploaded", "processing", "ready", "failed"],
     }).notNull(),
+    approvalStatus: text("approval_status", {
+      enum: ["pending", "approved", "rejected"],
+    })
+      .notNull()
+      .default("approved"),
     failReason: text("fail_reason"),
     transcodingJobId: text("transcoding_job_id"),
     createdAt: integer("created_at", { mode: "timestamp" })
@@ -155,6 +159,25 @@ export const shareLinks = sqliteTable("share_links", {
   token: text("token").notNull().unique(),
   expiresAt: integer("expires_at", { mode: "timestamp" }),
   allowPublic: integer("allow_public", { mode: "boolean" }).default(false),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+// Upload links table - public upload access for events
+export const uploadLinks = sqliteTable("upload_links", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  teamId: integer("team_id")
+    .notNull()
+    .references(() => teams.id),
+  eventId: integer("event_id")
+    .notNull()
+    .references(() => events.id),
+  token: text("token").notNull().unique(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdById: integer("created_by_id")
+    .notNull()
+    .references(() => users.id),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -282,6 +305,7 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
   clips: many(clips),
   segments: many(segments),
   shareLinks: many(shareLinks),
+  uploadLinks: many(uploadLinks),
 }));
 
 export const clipsRelations = relations(clips, ({ one, many }) => ({
@@ -352,6 +376,21 @@ export const shareLinksRelations = relations(shareLinks, ({ one }) => ({
   event: one(events, {
     fields: [shareLinks.eventId],
     references: [events.id],
+  }),
+}));
+
+export const uploadLinksRelations = relations(uploadLinks, ({ one }) => ({
+  team: one(teams, {
+    fields: [uploadLinks.teamId],
+    references: [teams.id],
+  }),
+  event: one(events, {
+    fields: [uploadLinks.eventId],
+    references: [events.id],
+  }),
+  createdBy: one(users, {
+    fields: [uploadLinks.createdById],
+    references: [users.id],
   }),
 }));
 

@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { clipPlayers, clips, clipTags, db, events, segments } from "@kolla/db";
+import { TRPCError } from "@trpc/server";
 import { and, eq, max } from "drizzle-orm";
 import { z } from "zod";
 import { deleteFile, getPresignedUploadUrl } from "../../lib/storage";
@@ -28,15 +29,114 @@ export const clipsRouter = router({
       });
     }),
 
+  // Returns clips pending approval (coach only)
+  pendingByEvent: teamProcedure
+    .input(z.object({ teamId: z.number(), eventId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.membership.role !== "coach") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only coaches can view pending clips",
+        });
+      }
+
+      return db.query.clips.findMany({
+        where: and(
+          eq(clips.eventId, input.eventId),
+          eq(clips.teamId, input.teamId),
+          eq(clips.approvalStatus, "pending"),
+        ),
+        with: {
+          uploader: true,
+        },
+        orderBy: (clips, { asc }) => [asc(clips.createdAt)],
+      });
+    }),
+
+  // Approve pending clips (coach only) - supports single or multiple clips
+  approve: teamProcedure
+    .input(z.object({ teamId: z.number(), clipIds: z.array(z.number()).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.membership.role !== "coach") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only coaches can approve clips",
+        });
+      }
+
+      // Verify all clips belong to the team
+      for (const clipId of input.clipIds) {
+        const clip = await db.query.clips.findFirst({
+          where: and(eq(clips.id, clipId), eq(clips.teamId, input.teamId)),
+        });
+
+        if (!clip) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Clip ${clipId} not found`,
+          });
+        }
+      }
+
+      // Approve all clips
+      for (const clipId of input.clipIds) {
+        await db
+          .update(clips)
+          .set({ approvalStatus: "approved" })
+          .where(eq(clips.id, clipId));
+      }
+
+      return { success: true, approvedCount: input.clipIds.length };
+    }),
+
+  // Reject a pending clip (coach only) - deletes the clip
+  reject: teamProcedure
+    .input(z.object({ teamId: z.number(), clipId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.membership.role !== "coach") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only coaches can reject clips",
+        });
+      }
+
+      const clip = await db.query.clips.findFirst({
+        where: and(eq(clips.id, input.clipId), eq(clips.teamId, input.teamId)),
+      });
+
+      if (!clip) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Clip not found",
+        });
+      }
+
+      // Delete from storage
+      try {
+        await deleteFile(clip.storageKey);
+        if (clip.hlsPrefix) {
+          await deleteFile(`${clip.hlsPrefix}master.m3u8`);
+        }
+      } catch (error) {
+        console.error("Error deleting files from storage:", error);
+      }
+
+      // Delete from database
+      await db.delete(clips).where(eq(clips.id, input.clipId));
+
+      return { success: true };
+    }),
+
   // Returns unified list of clips and segments sorted by index
   mediaByEvent: teamProcedure
     .input(z.object({ teamId: z.number(), eventId: z.number() }))
     .query(async ({ input }) => {
-      // Fetch clips
+      // Fetch clips (only approved ones)
       const clipsData = await db.query.clips.findMany({
         where: and(
           eq(clips.eventId, input.eventId),
           eq(clips.teamId, input.teamId),
+          eq(clips.approvalStatus, "approved"),
         ),
         with: {
           tags: true,
